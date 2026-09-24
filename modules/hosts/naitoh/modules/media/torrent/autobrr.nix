@@ -19,6 +19,8 @@
 
       me.hostSecrets.autobrr_session.owner = config.services.qbittorrent.user;
 
+      persist.directories = [ "/var/lib/private/autobrr" ];
+
       services.autobrr = {
         enable = true;
         openFirewall = true;

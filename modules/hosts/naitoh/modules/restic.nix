@@ -3,15 +3,11 @@
 {
   flake.modules.nixos.naitoh =
     {
-      secrets,
       config,
       pkgs,
       lib,
       ...
     }:
-    let
-      inherit (config.me) hostname;
-    in
     {
       packages = with pkgs; [
         rclone
