@@ -21,9 +21,10 @@
       boot.kernelModules = [ "kvm-intel" ];
       boot.extraModulePackages = [ ];
 
-      # boot.loader.systemd-boot.extraInstallCommands = ''
-      #   sed -i 's/^default .*/default auto-windows/' /boot/loader/loader.conf
-      # '';
+      # because windows needs to restart 10 fucking times for an update
+      boot.loader.limine.extraConfig = ''
+        remember_last_entry: yes
+      '';
 
       boot.loader.limine.extraEntries = ''
         /Windows

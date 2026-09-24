@@ -1,4 +1,5 @@
 #!@python3@/bin/python3 -B
+# NOTE: override to always name the latest generation generation "Default" so remember_last_entry can be used
 
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -372,6 +373,8 @@ def generate_config_entry(profile: str, gen: str, special: bool) -> str:
             entry += xen_config_entry(2, boot_spec, xen_version, gen, time, True)
         entry += xen_config_entry(2, boot_spec, xen_version, gen, time, False)
 
+    gen_title = "Default" if special else f"Generation {gen}"
+
     if len(specialisation_list) > 0:
         depth += 1
         entry += "/" * (depth - 1)
@@ -379,10 +382,10 @@ def generate_config_entry(profile: str, gen: str, special: bool) -> str:
         if special:
             entry += "+"
 
-        entry += f"Generation {gen}" + "\n"
+        entry += gen_title + "\n"
         entry += config_entry(depth, boot_spec, f"Default", str(time))
     else:
-        entry += config_entry(depth, boot_spec, f"Generation {gen}", str(time))
+        entry += config_entry(depth, boot_spec, gen_title, str(time))
 
     for spec, spec_boot_spec in specialisation_list:
         entry += config_entry(depth, spec_boot_spec, f"{spec}", str(time))

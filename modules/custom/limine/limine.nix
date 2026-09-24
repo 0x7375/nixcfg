@@ -1,4 +1,4 @@
-# pulled because i can't be arsed updating rn
+# NOTE: pulled because i can't be arsed updating rn, additionalFiles fixed for m1n1 with nixos apple silicon
 {
   flake.modules.nixos.overrides =
     {
