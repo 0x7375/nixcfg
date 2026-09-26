@@ -15,6 +15,9 @@
   flake.modules.nixos.dev =
     { pkgs, ... }:
     {
+      services.tailscale.enable = true;
+      persist.directories = [ "/var/lib/tailscale" ];
+
       packages = with pkgs; [
         go
         delve
