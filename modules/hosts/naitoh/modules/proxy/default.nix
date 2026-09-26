@@ -48,15 +48,37 @@
           <!DOCTYPE html>
           <html>
             <head>
-              <title>~/Homepage</title>
+              <meta charset="utf-8">
+              <title>~/homelab</title>
               <style type="text/css">
               ${builtins.readFile ./styles.css}
               </style>
+              <link rel="icon" href="./img/tux.png">
             </head>
-            <styles href="./styles.css"
             <body>
-              <h1>~/Homepage</h1>
-              <ul id="services">${links}</ul>
+              <h1>~/homelab</h1>
+
+              <div class="marquee-wrap"><span>bonjour &nbsp;&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;&nbsp; c'est la liste des services en gros &nbsp;&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;&nbsp; il faut cliquer sur les liens &nbsp;&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;&nbsp; c'est long là &nbsp;&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;&nbsp; pipi (caca) </span></div>
+
+              <hr>
+
+              <ul id="services">
+                ${links}
+              </ul>
+
+              <hr>
+
+              <div class="badge-banner">
+                <img src="./img/gnu-linux.gif">
+                <img src="./img/neovim.gif">
+                <img src="./img/jellyfin.gif">
+                <img src="./img/bitwarden.gif">
+                <img src="./img/grapheneos.gif">
+                <img src="./img/steam.gif">
+                <img src="./img/gaywebring.gif">
+                <img src="./img/vocaloid.gif">
+                <img src="./img/stop.gif">
+              </div>
             </body>
           </html>
         '';
@@ -89,6 +111,7 @@
             forceSSL = true;
             enableACME = true;
             locations."/".root = "/var/www";
+            locations."/img/".alias = "${./img}/";
           };
 
           "router.${domain}" = {
