@@ -628,6 +628,7 @@
     {
       hj.xdg.config.files."noctalia/settings.toml".value = {
         idle = {
+          pre_action_fade_seconds = 0;
           behavior_order = [
             "screen-off"
             "lock-and-suspend"
