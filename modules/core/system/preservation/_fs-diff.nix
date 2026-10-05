@@ -109,12 +109,14 @@ pkgs.writeShellApplication {
             [[ -e "$MNT_PERSIST$rel" ]] || echo "  $rel"
         done | gawk "$collapse_awk"
 
+    MANIFEST_CONTENT=$(cat /var/lib/hjem/manifest-ayko.json 2>/dev/null || echo "")
+
     echo "@home:"
     sudo find "$MNT_HOME" "''${prune_args[@]}" -type f -print |
         while IFS= read -r full_path; do
             rel="/home/''${full_path#"$MNT_HOME"/}"
             [[ -e "$MNT_PERSIST$rel" ]] && continue
-            grep -Fq "$rel" /var/lib/hjem/manifest-ayko.json 2>/dev/null && continue
+            [[ "$MANIFEST_CONTENT" == *"$rel"* ]] && continue
             
             echo "  ''${rel#/home/ayko/}"
         done | gawk "$collapse_awk"
