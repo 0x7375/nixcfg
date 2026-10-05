@@ -156,6 +156,7 @@
             # pinned until 5.0.0-beta.9 so my dmenu patch works
             noctalia = final.unstable.noctalia.overrideAttrs (old: rec {
               version = "4dd6f29dbaafde7b11d61ce12685d01441d4a483";
+              doInstallCheck = false;
               src = pkgs.fetchFromGitHub {
                 inherit (old.src) owner repo;
                 rev = version;
