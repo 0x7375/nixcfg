@@ -48,15 +48,10 @@
         };
 
         networkIps = mkOption {
-          type = types.attrsOf (types.attrsOf (types.either types.str (types.attrsOf types.str)));
+          type = types.attrsOf (types.either types.str (types.attrsOf types.str));
           default = {
-            lan = {
-              subnet = "192.168.1.0/24";
-              gateway = "192.168.1.254";
-            };
-            vpn = {
-              subnet = "10.0.0.0/24";
-            };
+            subnet = "192.168.1.0/24";
+            gateway = "192.168.1.254";
           };
           internal = true;
         };

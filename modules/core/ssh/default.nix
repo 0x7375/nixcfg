@@ -53,10 +53,10 @@
 
       # darwin.programs.ssh.extraConfig =
       #   let
-      #     validHosts = lib.filterAttrs (_: v: v.ips.lan != null) config.me.hosts;
+      #     validHosts = lib.filterAttrs (_: v: v.ip != null) config.me.hosts;
       #     hostEntries = lib.mapAttrsToList (h: v: ''
       #       Host ${h}
-      #         HostName ${v.ips.lan}
+      #         HostName ${v.ip}
       #     '') validHosts;
       #   in
       #   builtins.concatStringsSep "\n" hostEntries;

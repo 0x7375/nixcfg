@@ -10,6 +10,7 @@
         cutler
         mach
 
+        geim
         shannon
         lamarr
         yoshino
@@ -26,6 +27,7 @@
         android = [
           shannon
           lamarr
+          geim
         ];
       };
     in

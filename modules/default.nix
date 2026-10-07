@@ -78,7 +78,7 @@ in
           networkEnvironment
           keyd
           btrfs
-          vpnPeer
+          homeVpnClient
           syncthingClient
           desktop
           wayland
@@ -111,7 +111,7 @@ in
           networkEnvironment
           btrfs
           syncthingClient
-          vpnPeer
+          homeVpnClient
           desktop
           wayland
           dev
@@ -145,7 +145,7 @@ in
         ]
         ++ (with scope.darwin; [
           secrets
-          vpnPeer
+          homeVpnClient
           desktop
           kitty
           network

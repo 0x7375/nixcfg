@@ -1,6 +1,7 @@
 {
   flake.modules.nixos.naitoh =
     {
+      pkgs,
       lib,
       config,
       ...
@@ -18,6 +19,8 @@
         dockerSocket.enable = true;
         dockerCompat = true;
       };
+
+      packages = [ pkgs.docker-compose ];
 
       # automatically turn off display after 60s of inactivity
       boot.kernelParams = [ "consoleblank=60" ];

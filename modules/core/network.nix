@@ -7,11 +7,7 @@
       environment.etc.hosts.text =
         let
           hosts = lib.flatten (
-            lib.mapAttrsToList (
-              h: v:
-              (lib.optional (v.ips.lan != null) "${v.ips.lan} ${h}")
-              ++ (lib.optional (v.ips.vpn != null) "${v.ips.vpn} ${h}.vpn")
-            ) config.me.hosts
+            lib.mapAttrsToList (h: v: (lib.optional (v.ip != null) "${v.ip} ${h}")) config.me.hosts
           );
         in
         lib.mkForce ''
@@ -140,8 +136,6 @@
     {
       config,
       secrets,
-      lib,
-      pkgs,
       ...
     }:
     {

@@ -117,7 +117,7 @@
           "router.${domain}" = {
             forceSSL = true;
             useACMEHost = domain;
-            locations."/".proxyPass = "http://${config.me.networkIps.lan.gateway}";
+            locations."/".proxyPass = "http://${config.me.networkIps.gateway}";
           };
         }
         // lib.mapAttrs' (

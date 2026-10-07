@@ -6,6 +6,8 @@
       ...
     }:
     {
+      persistUser.directories = [ ".local/share/android" ];
+
       users.users.${config.me.user}.extraGroups = [ "adbusers" ];
 
       unfree-packages = [ "android-studio-stable" ];
