@@ -110,11 +110,16 @@
           # required for vesktop to open links for example
           xdg-utils
           # xwayland-satellite
+
+          slurp
         ];
 
         xdg.portal = {
           wlr.enable = true;
-          extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
+          extraPortals = with pkgs; [
+            xdg-desktop-portal-gtk
+            xdg-desktop-portal-wlr
+          ];
 
           config.common = {
             default = [ "gtk" ];
