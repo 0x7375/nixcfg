@@ -43,6 +43,11 @@
               trash_ids = [ config.me.blocklistId ];
               assign_scores_to = assign (-10000);
             }
+            # Block Dolby Vision Profile 5 (No HDR fallback)
+            {
+              trash_ids = [ "9b27ab6498ec0f31a3353992e19434ca" ];
+              assign_scores_to = assign (-10000);
+            }
           ];
       };
 

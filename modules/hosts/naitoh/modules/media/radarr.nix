@@ -1,5 +1,3 @@
-{ self, ... }:
-
 {
   flake.modules.nixos.naitoh =
     {
@@ -38,6 +36,11 @@
             # Blacklisted group
             {
               trash_ids = [ config.me.blocklistId ];
+              assign_scores_to = assign (-10000);
+            }
+            # Block Dolby Vision Profile 5 (No HDR fallback)
+            {
+              trash_ids = [ "923b6abef9b17f937fab56cfcf89e1f1" ];
               assign_scores_to = assign (-10000);
             }
           ];
