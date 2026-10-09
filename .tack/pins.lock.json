@@ -3,9 +3,9 @@
     "type": "github",
     "owner": "nix-community",
     "repo": "nixos-apple-silicon",
-    "rev": "9e46a0edd8a6d96538d146a4bb4477e7fae8b1a0",
-    "narHash": "sha256-DjIkyK48jWUxYCCoTDS9L5PgGg6/RFRSRXW2dSFpJg8=",
-    "lastModified": 1783669315
+    "rev": "4a4ba6566ebb435b037dfdac28caf1dfe581b4c0",
+    "narHash": "sha256-nmbZdbNGjUwkvRTL0UZV/gQ4ypzMFF8yTHaIVOUJSYc=",
+    "lastModified": 1790700867
   },
   "asahi-firmware": {
     "type": "git",
@@ -151,9 +151,9 @@
   },
   "nixpkgs-unstable": {
     "type": "tarball",
-    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1053317.0e251e24a4f2/nixexprs.tar.xz",
-    "rev": "0e251e24a4f24e036a084b6b4b2d2491af4167f4",
-    "narHash": "sha256-yjGG65gA1jORt0hWxjzrnw3AYkIn8EWolp8vezwXZ3I="
+    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1084968.a7868a727837/nixexprs.tar.xz",
+    "rev": "a7868a727837f3c09cee2ce0ca671c76b1589fed",
+    "narHash": "sha256-u3KCLxsnf1622GdFccg8hmkEIutOZ1h4pvia5ERjIuI="
   },
   "npr": {
     "type": "github",
