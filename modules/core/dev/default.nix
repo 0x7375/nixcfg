@@ -15,6 +15,13 @@
   flake.modules.nixos.dev =
     { pkgs, ... }:
     {
+      persistUser.directories = [
+        "Android"
+        ".config/Google"
+        ".local/share/gradle"
+        ".cache/Google"
+      ];
+
       packages = with pkgs; [
         go
         delve
