@@ -1,5 +1,3 @@
-{ self, ... }:
-
 {
   flake.modules.nixos.naitoh =
     { config, ... }:
@@ -40,12 +38,6 @@
           install -D -m 600 "$CREDENTIALS_DIRECTORY/id_ed25519" "$STATE_DIRECTORY/beszel_data/id_ed25519"
         '';
       };
-
-      nixpkgs.overlays = [
-        (final: prev: {
-          inherit (final.unstable) beszel;
-        })
-      ];
 
       services.beszel = {
         hub = {
