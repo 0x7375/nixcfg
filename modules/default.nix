@@ -83,6 +83,7 @@ in
           desktop
           wayland
           dev
+          docker
           kitty
           preservation
         ]
@@ -97,6 +98,7 @@ in
           keyd
           btrfs
           syncthing
+          docker
           preservation
         ]
       );
@@ -113,6 +115,7 @@ in
           syncthingClient
           homeVpnClient
           desktop
+          docker
           wayland
           dev
           preservation
