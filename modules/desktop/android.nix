@@ -6,7 +6,10 @@
       ...
     }:
     {
-      persistUser.directories = [ ".local/share/android" ];
+      persistUser.directories = [
+        ".local/share/android"
+        "Android"
+      ];
 
       users.users.${config.me.user}.extraGroups = [ "adbusers" ];
 
