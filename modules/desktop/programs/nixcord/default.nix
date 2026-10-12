@@ -1,7 +1,7 @@
 {
   # TODO: darwin fails to build
   flake.modules.nixos.desktop =
-    { config, ... }:
+    { pkgs, config, ... }:
     {
       persistUser.directories = [
         ".config/vesktop"
@@ -19,7 +19,10 @@
       programs.nixcord = {
         enable = true;
         discord.enable = false;
-        vesktop.enable = true;
+        vesktop = {
+          enable = true;
+          package = pkgs.auto.vesktop;
+        };
         inherit (config.me) user;
         config.plugins = {
           fixCodeblockGap.enable = true;
