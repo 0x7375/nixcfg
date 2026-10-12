@@ -34,6 +34,7 @@ let
         "https://youtube.com"
         "https://discord.com"
         "https://keybr.com"
+        "https://discord.com"
         "https://claude.ai"
         "https://gemini.google.com"
       ];
