@@ -295,7 +295,7 @@
   flake.modules.nixos.secrets = { config, ... }: {
     environment.shellInit = # bash
       ''
-        GITHUB_TOKEN=$(cat "${config.sops.secrets.github_token.path}")
+        export GITHUB_TOKEN=$(cat "${config.sops.secrets.github_token.path}")
       '';
   };
 }
