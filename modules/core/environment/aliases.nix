@@ -293,7 +293,7 @@
     };
 
   flake.modules.nixos.secrets = { config, ... }: {
-    environment.interactiveShellInit = # bash
+    environment.interactiveInit = # bash
       ''
         GITHUB_TOKEN=$(cat "${config.sops.secrets.github_token.path}")
       '';
