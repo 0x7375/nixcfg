@@ -4,12 +4,11 @@
   flake.modules.nixos.naitoh =
     {
       lib,
-      secrets,
       config,
       ...
     }:
     let
-      inherit (config.me) domain hostname;
+      inherit (config.me) domain;
       mkSubDomain =
         {
           port,
