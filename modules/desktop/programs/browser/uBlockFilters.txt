@@ -39,5 +39,8 @@ m.youtube.com##.single-column-browse-results-tabs>a:has-text(Shorts)
 ! adblocking
 www.twitch.tv##+js(twitch-videoad)
 
+! hide youtube subscriptions tab "most relevant" top banner
+www.youtube.com##.ytd-rich-shelf-renderer.style-scope
+
 ! whitelist homarr
 @@||umami.homarr.dev^
