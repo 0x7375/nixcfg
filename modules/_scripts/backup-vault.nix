@@ -29,9 +29,10 @@ pkgs.writeShellApplication {
       }
 
       stamp_name() {
-        local f="$1" base ext
-        base="$(basename "''${f%.*}")"
-        ext="''${f##*.}"
+        local f="$1" file base ext
+        file="$(basename "$f")"
+        base="''${file%%.*}"
+        ext="''${file#*.}"
         echo "''${base}_$(date +%Y%m%d_%H%M%S).''${ext}"
       }
 
