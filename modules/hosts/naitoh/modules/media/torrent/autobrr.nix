@@ -43,6 +43,7 @@
           Type = "oneshot";
           StateDirectory = "ratio-filter";
           WorkingDirectory = "%S/ratio-filter";
+          LogNamespace = "longterm";
         };
       };
 

@@ -45,6 +45,13 @@
         SystemMaxUse=200M
       '';
 
+      environment.etc."systemd/journald@longterm.conf".text = ''
+        [Journal]
+        Storage=persistent
+        SystemMaxUse=5G
+        MaxRetentionSec=1year
+      '';
+
       services.logind.settings.Login.HandleLidSwitch = "ignore";
 
       # do not change
