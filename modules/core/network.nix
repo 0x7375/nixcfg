@@ -134,6 +134,7 @@
 
   flake.modules.nixos.networkEnvironment =
     {
+      lib,
       config,
       secrets,
       ...
@@ -150,82 +151,100 @@
 
       networking.networkmanager.ensureProfiles = {
         environmentFiles = [ config.sops.secrets.networkingEnvironment.path ];
-        profiles = {
-          home-wifi = {
-            connection = {
-              id = "home-wifi";
-              type = "wifi";
+        profiles =
+          let
+            ignoreDns = {
+              ipv4 = {
+                method = "auto";
+                ignore-auto-dns = true;
+              };
+              ipv6 = {
+                method = "auto";
+                ignore-auto-dns = true;
+              };
             };
-            wifi = {
-              ssid = "$SSID_HOME";
-            };
-            wifi-security = {
-              key-mgmt = "wpa-psk";
-              psk = "$PSK_HOME";
-            };
+          in
+          {
+            home-wifi = {
+              connection = {
+                id = "home-wifi";
+                type = "wifi";
+              };
+              wifi = {
+                ssid = "$SSID_HOME";
+              };
+              wifi-security = {
+                key-mgmt = "wpa-psk";
+                psk = "$PSK_HOME";
+              };
+            }
+            // ignoreDns;
+            bell = {
+              connection = {
+                id = "bell";
+                type = "wifi";
+              };
+              wifi = {
+                mode = "infrastructure";
+                ssid = "bell";
+              };
+              wifi-security = {
+                key-mgmt = "wpa-psk";
+                psk = "$PSK_BELL";
+              };
+            }
+            // ignoreDns;
+            away_1 = {
+              connection = {
+                id = "away_1";
+                type = "wifi";
+              };
+              wifi = {
+                ssid = "$SSID_AWAY_1";
+              };
+              wifi-security = {
+                key-mgmt = "wpa-psk";
+                psk = "$PSK_AWAY_1";
+              };
+            }
+            // ignoreDns;
+            away_2 = {
+              connection = {
+                id = "away_2";
+                type = "wifi";
+              };
+              wifi = {
+                ssid = "$SSID_AWAY_2";
+              };
+              wifi-security = {
+                key-mgmt = "wpa-psk";
+                psk = "$PSK_AWAY_2";
+              };
+            }
+            // ignoreDns;
+            eduroam = {
+              "802-1x" = {
+                anonymous-identity = "anonymous@unicaen.fr";
+                eap = "ttls;";
+                identity = "$USER_EDUROAM";
+                password = "$PSK_EDUROAM";
+                phase2-auth = "mschapv2";
+              };
+              connection = {
+                id = "eduroam";
+                type = "wifi";
+              };
+              wifi = {
+                mode = "infrastructure";
+                ssid = "eduroam";
+              };
+              wifi-security = {
+                auth-alg = "open";
+                key-mgmt = "wpa-eap";
+              };
+            }
+            // ignoreDns;
           };
-          bell = {
-            connection = {
-              id = "bell";
-              type = "wifi";
-            };
-            wifi = {
-              mode = "infrastructure";
-              ssid = "bell";
-            };
-            wifi-security = {
-              key-mgmt = "wpa-psk";
-              psk = "$PSK_BELL";
-            };
-          };
-          away_1 = {
-            connection = {
-              id = "away_1";
-              type = "wifi";
-            };
-            wifi = {
-              ssid = "$SSID_AWAY_1";
-            };
-            wifi-security = {
-              key-mgmt = "wpa-psk";
-              psk = "$PSK_AWAY_1";
-            };
-          };
-          away_2 = {
-            connection = {
-              id = "away_2";
-              type = "wifi";
-            };
-            wifi = {
-              ssid = "$SSID_AWAY_2";
-            };
-            wifi-security = {
-              key-mgmt = "wpa-psk";
-              psk = "$PSK_AWAY_2";
-            };
-          };
-          eduroam = {
-            "802-1x" = {
-              anonymous-identity = "anonymous@unicaen.fr";
-              eap = "ttls;";
-              identity = "$USER_EDUROAM";
-              password = "$PSK_EDUROAM";
-              phase2-auth = "mschapv2";
-            };
-            connection = {
-              id = "eduroam";
-              type = "wifi";
-            };
-            wifi = {
-              mode = "infrastructure";
-              ssid = "eduroam";
-            };
-            wifi-security = {
-              auth-alg = "open";
-              key-mgmt = "wpa-eap";
-            };
-          };
-        };
       };
     };
 }
