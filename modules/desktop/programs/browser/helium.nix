@@ -37,6 +37,7 @@ let
         "https://discord.com"
         "https://claude.ai"
         "https://gemini.google.com"
+        "https://0xaa.me"
       ];
       ClearBrowsingDataOnExitList = [
         "cached_images_and_files"
