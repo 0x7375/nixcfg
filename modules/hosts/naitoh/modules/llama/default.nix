@@ -61,7 +61,8 @@
                 '';
               }
             );
-            pdf.command = lib.getExe pkgs.auto.pdf-mcp;
+            # NOTE: broken
+            # pdf.command = lib.getExe pkgs.auto.pdf-mcp;
 
             filesystem = {
               command = lib.getExe pkgs.mcp-server-filesystem;

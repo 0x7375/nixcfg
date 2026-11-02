@@ -54,7 +54,7 @@
       nixflix.sonarr = {
         enable = true;
         openFirewall = true;
-        package = pkgs.auto.sonarr;
+        package = pkgs.callPackage ./_package.nix { };
         config = {
           mediaManagement.autoUnmonitorPreviouslyDownloadedEpisodes = true;
           apiKey._secret = config.sops.secrets."sonarr/api_key".path;

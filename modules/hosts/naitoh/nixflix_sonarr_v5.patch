@@ -1,0 +1,21 @@
+diff --git a/modules/arr-common/hostConfig.nix b/modules/arr-common/hostConfig.nix
+--- a/modules/arr-common/hostConfig.nix
++++ b/modules/arr-common/hostConfig.nix
+@@ -323,7 +323,7 @@ in
+             CONFIG_ID=$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.id')
+ 
+             echo "Building configuration..."
+-            NEW_CONFIG=$(${pkgs.jq}/bin/jq -n \
++            NEW_CONFIG=$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq \
+               ${jqSecrets.flagsString} \
+               --argjson id "$CONFIG_ID" \
+               --arg allowedHosts "$(echo "$HOST_CONFIG" | ${pkgs.jq}/bin/jq -r '.allowedHosts // ""')" \
+@@ -344,7 +344,7 @@ in
+               --arg proxyBypassFilter ${escapeShellArg hc.proxyBypassFilter} \
+               --arg certificateValidation ${escapeShellArg hc.certificateValidation} \
+               --arg backupFolder ${escapeShellArg hc.backupFolder} \
+-              '{
++              '. + {
+                 id: $id,
+                 allowedHosts: $allowedHosts,
+                 bindAddress: $bindAddress,

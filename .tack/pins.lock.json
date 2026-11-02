@@ -17,9 +17,9 @@
   },
   "auto-update": {
     "type": "tarball",
-    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1093333.fe13242281a6/nixexprs.tar.xz",
-    "rev": "fe13242281a67641c0102cdb1087f0ebe586c7df",
-    "narHash": "sha256-LPFRbrCWWyNsdQLO3SX1B/5UMkFK0hfe7bZR6lENvpc="
+    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1105037.1c89083e451e/nixexprs.tar.xz",
+    "rev": "1c89083e451e891152365b799595cf7790a43325",
+    "narHash": "sha256-LOv16TsMYV2/8BUYnhSxHkOASe7es2ORbqMeLlZJ8Hc="
   },
   "disko": {
     "type": "github",
@@ -129,9 +129,9 @@
     "type": "github",
     "owner": "kiriwalawren",
     "repo": "nixflix",
-    "rev": "f518c76ce58c5108c584b5f13c9eb00e881ad734",
-    "narHash": "sha256-IxWzHKBYxWVciypxWWmqjfOzvABgrCOcT3wQVYBv1oY=",
-    "lastModified": 1784475101
+    "rev": "8402435b337f5f94e971f4b585d92d8a81eedceb",
+    "narHash": "sha256-BZTLgxPS10cMKy0kVXBYPome8G9YJGqjuWSEj2+hoHc=",
+    "lastModified": 1793295624
   },
   "nixpkgs": {
     "type": "github",
