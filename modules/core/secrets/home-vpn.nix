@@ -40,7 +40,7 @@
 
     services.tailscale = {
       useRoutingFeatures = "client";
-      extraUpFlags = [ "--accept-routes" ];
+      extraSetFlags = [ "--accept-routes" ];
     };
   };
 
@@ -51,7 +51,7 @@
 
       services.tailscale = {
         useRoutingFeatures = "server";
-        extraUpFlags = [
+        extraSetFlags = [
           "--advertise-routes=${config.me.host.ip}/32"
         ];
       };
