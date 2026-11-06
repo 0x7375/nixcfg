@@ -14,8 +14,15 @@
             };
 
             port = mkOption {
-              type = types.int;
-              description = "Network port";
+              type = types.nullOr types.int;
+              default = null;
+              description = "Network port for a proxied service";
+            };
+
+            root = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "Document root for a static service";
             };
 
             path = mkOption {

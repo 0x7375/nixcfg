@@ -1,5 +1,3 @@
-{ inputs, self, ... }:
-
 {
   flake.modules.nixos.naitoh =
     {
@@ -7,10 +5,6 @@
       pkgs,
       ...
     }:
-
-    let
-      graine = inputs.graine.packages.${pkgs.stdenv.hostPlatform.system}.default;
-    in
     {
       me.services.autobrr = {
         subdomain = "auto";
@@ -29,29 +23,6 @@
         settings = {
           host = "0.0.0.0";
           checkForUpdates = false;
-        };
-      };
-
-      packages = [ graine ];
-
-      systemd.services.graine = {
-        script = ''
-          export QBIT_PW=$(cat "${config.sops.secrets."qbittorrent/pw".path}")
-          exec ${graine}/bin/graine http://localhost:${toString config.nixflix.torrentClients.qbittorrent.webuiPort}
-        '';
-        serviceConfig = {
-          Type = "oneshot";
-          StateDirectory = "ratio-filter";
-          WorkingDirectory = "%S/ratio-filter";
-          LogNamespace = "longterm";
-        };
-      };
-
-      systemd.timers.graine = {
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "daily";
-          Persistent = true;
         };
       };
     };

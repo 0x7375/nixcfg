@@ -11,7 +11,8 @@
       inherit (config.me) domain;
       mkSubDomain =
         {
-          port,
+          port ? null,
+          root ? null,
           path ? "",
           webSockets ? false,
           extraConfig ? "",
@@ -21,11 +22,17 @@
           forceSSL = true;
           useACMEHost = domain;
           locations = {
-            "/" = {
-              proxyPass = "http://127.0.0.1:${toString port}";
-              proxyWebsockets = webSockets;
-              inherit extraConfig;
-            };
+            "/" =
+              if root != null then
+                {
+                  inherit root;
+                }
+              else
+                {
+                  proxyPass = "http://127.0.0.1:${toString port}";
+                  proxyWebsockets = webSockets;
+                  inherit extraConfig;
+                };
           }
           // lib.optionalAttrs (path != "") {
             "= /" = {
