@@ -1,3 +1,5 @@
+{ inputs, ... }:
+
 {
   flake.modules.nixos.desktop =
     {
@@ -35,7 +37,6 @@
           pavucontrol
 
           pamixer
-          unstable.pear-desktop
         ];
 
         services.udev.extraRules = # bash
