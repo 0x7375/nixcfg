@@ -29,6 +29,7 @@
           volume."/persist" = {
             snapshot_dir = "/snapshots";
             subvolume = ".";
+            snapshot_create = "onchange";
           };
         };
       };
@@ -36,7 +37,7 @@
       systemd.services.btrfs-balance = {
         description = "Btrfs metadata balance";
         script = ''
-          ${lib.getExe pkgs.btrfs-progs} balance start -musage=20 / || true
+          ${lib.getExe pkgs.btrfs-progs} balance start -dusage=50 /
         '';
         serviceConfig.Type = "oneshot";
       };
