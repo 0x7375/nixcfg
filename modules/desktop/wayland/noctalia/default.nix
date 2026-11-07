@@ -316,6 +316,8 @@
                 };
               };
 
+              audio.enable_notification_sounds = false;
+
               battery.warning_threshold = 20;
               brightness = {
                 enable_ddcutil = true;
