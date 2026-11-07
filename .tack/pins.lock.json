@@ -121,9 +121,9 @@
     "type": "github",
     "owner": "4evy",
     "repo": "nixcord",
-    "rev": "6c9dd68b37f50f6db57bea777e92fd67e0b2e0bb",
-    "narHash": "sha256-nuHRE13JbCT+xE76blZIfUEG8rV8eWld+gSVfjqCTZw=",
-    "lastModified": 1783482236
+    "rev": "a82a7c70b95232795567ca7db062ff1ac747b059",
+    "narHash": "sha256-AkS3jtwLO7zjTX1g9HA4qVe5SFItPkzFjt15g9VrApY=",
+    "lastModified": 1794042104
   },
   "nixflix": {
     "type": "github",

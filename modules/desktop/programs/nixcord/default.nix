@@ -1,7 +1,7 @@
 {
   # TODO: darwin fails to build
   flake.modules.nixos.desktop =
-    { pkgs, config, ... }:
+    { config, ... }:
     {
       persistUser.directories = [
         ".config/vesktop"
@@ -16,12 +16,13 @@
         }
       ];
 
+      unfree-packages = [ "discord" ];
+
       programs.nixcord = {
         enable = true;
-        discord.enable = false;
-        vesktop = {
-          enable = true;
-          package = pkgs.auto.vesktop;
+        discord = {
+          openASAR.enable = false;
+          vencord.enable = true;
         };
         inherit (config.me) user;
         config.plugins = {
