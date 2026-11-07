@@ -153,16 +153,8 @@
 
         nixpkgs.overlays = [
           (final: prev: {
-            # pinned until 5.0.0-beta.9 so my dmenu patch works
-            noctalia = final.unstable.noctalia.overrideAttrs (old: rec {
-              version = "4dd6f29dbaafde7b11d61ce12685d01441d4a483";
+            noctalia = final.unstable.noctalia.overrideAttrs (old: {
               doInstallCheck = false;
-              src = pkgs.fetchFromGitHub {
-                inherit (old.src) owner repo;
-                rev = version;
-                hash = "sha256-Kc3xbv2+z0+aV+t4IL1BfoTtB9MS0zHyI38oiv7zHxc=";
-              };
-
               patches = (old.patches or [ ]) ++ [
                 ./patches/truncate_ssid.patch
                 ./patches/glyph_dmenu_cli.patch
@@ -479,6 +471,7 @@
                 };
                 launcher = {
                   categories = false;
+                  layout = "simple";
                 };
                 panel = {
                   open_near_click_control_center = true;
@@ -518,11 +511,11 @@
                 workspaces = {
                   capsule = false;
                   label_source = "id";
-                  empty_color = "outline";
+                  empty_color = "outline_variant";
                   focused_color = "on_surface";
                   hide_when_empty = true;
                   style = "minimal";
-                  occupied_color = "outline";
+                  occupied_color = "outline_variant";
                 };
                 mango-layout.type = "me/mango-layout:mango-layout";
               };

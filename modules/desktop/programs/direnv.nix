@@ -58,6 +58,6 @@
         ".local/share/direnv"
       ];
 
-      packages = [ pkgs.unstable.devenv ];
+      packages = [ pkgs.devenv ];
     };
 }

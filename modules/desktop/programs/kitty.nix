@@ -21,12 +21,6 @@
   flake.modules.generic.kitty =
     { config, ... }:
     {
-      nixpkgs.overlays = [
-        (final: _: {
-          inherit (final.unstable) kitty;
-        })
-      ];
-
       me.desktop.terminal = {
         name = "kitty";
         cmd = "kitty -1";

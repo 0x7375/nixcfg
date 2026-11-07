@@ -1,8 +1,7 @@
 diff --git a/src/cli/schema_dmenu.h b/src/cli/schema_dmenu.h
-index 86d2d74b9..108c485ca 100644
 --- a/src/cli/schema_dmenu.h
 +++ b/src/cli/schema_dmenu.h
-@@ -8,6 +8,7 @@ namespace noctalia::cli {
+@@ -8,6 +8,7 @@
  
    inline constexpr std::array kDmenuFlags{
        Flag{"--prompt", "-p", "<text>", "Set the launcher prompt", {}, {}, false, false},
@@ -11,10 +10,9 @@ index 86d2d74b9..108c485ca 100644
    inline constexpr Command kDmenuCmd{
        "dmenu",
 diff --git a/src/launcher/dmenu_cli.cpp b/src/launcher/dmenu_cli.cpp
-index db246ce42..64f60dce2 100644
 --- a/src/launcher/dmenu_cli.cpp
 +++ b/src/launcher/dmenu_cli.cpp
-@@ -44,6 +44,7 @@ namespace noctalia::launcher {
+@@ -44,6 +44,7 @@
      if (parsed->helpRequested)
        return 0;
      const std::string prompt{parsed->value("--prompt")};
@@ -22,21 +20,20 @@ index db246ce42..64f60dce2 100644
  
      // Read all of stdin.
      std::string candidates;
-@@ -92,7 +93,8 @@ namespace noctalia::launcher {
+@@ -92,7 +93,8 @@
      }
  
      // Header line is the prompt, then candidate bytes follow on the same connection.
 -    if (!writeAll(fd, prompt.data(), prompt.size())
-+    const std::string header = prompt + '\0' + glyph + '\n';
++    const std::string header = prompt + '\0' + glyph + "\n";
 +    if (!writeAll(fd, header.data(), header.size())
          || ::write(fd, "\n", 1) != 1
          || !writeAll(fd, candidates.data(), candidates.size())) {
        std::println(stderr, "error: write() failed: {}", std::strerror(errno));
 diff --git a/src/launcher/dmenu_ipc.cpp b/src/launcher/dmenu_ipc.cpp
-index c135fc918..bb0705807 100644
 --- a/src/launcher/dmenu_ipc.cpp
 +++ b/src/launcher/dmenu_ipc.cpp
-@@ -214,16 +214,25 @@ void DmenuIpcService::finalizeSession(Session& session) {
+@@ -214,15 +214,22 @@
    const std::string& buf = session.buffer;
    std::vector<std::string> lines;
    std::string prompt;
@@ -53,32 +50,28 @@ index c135fc918..bb0705807 100644
 +    std::string header = buf.substr(0, nl);
 +    if (!header.empty() && header.back() == '\r') {
 +      header.pop_back();
-     }
-+
-+    if (const auto null_pos = header.find('\0'); null_pos != std::string::npos) {
-+      prompt = header.substr(0, null_pos);
-+      glyph = header.substr(null_pos + 1);
++    }
++    if (const auto nullPos = header.find('\0'); nullPos != std::string::npos) {
++      prompt = header.substr(0, nullPos);
++      glyph = header.substr(nullPos + 1);
 +    } else {
 +      prompt = header;
-+    }
-+
+     }
      begin = nl + 1;
    }
-   for (std::size_t i = begin; i <= buf.size(); ++i) {
-@@ -245,7 +254,7 @@ void DmenuIpcService::finalizeSession(Session& session) {
+@@ -245,7 +252,7 @@
    const int connFd = session.connFd;
  
    auto provider = std::make_unique<DmenuStdinProvider>(
 -      std::move(lines), providerId,
-+      std::move(lines), providerId, glyph,
++      std::move(lines), providerId, std::move(glyph),
        [this, connFd](std::optional<std::string> selection) { completeSession(connFd, std::move(selection)); }
    );
    m_launcherPanel->addProvider(std::move(provider));
 diff --git a/src/launcher/dmenu_stdin_provider.cpp b/src/launcher/dmenu_stdin_provider.cpp
-index 2b2aaa2a0..77e2ec47d 100644
 --- a/src/launcher/dmenu_stdin_provider.cpp
 +++ b/src/launcher/dmenu_stdin_provider.cpp
-@@ -15,8 +15,10 @@ namespace {
+@@ -15,8 +15,10 @@
  
  } // namespace
  
@@ -91,13 +84,12 @@ index 2b2aaa2a0..77e2ec47d 100644
    m_lines.reserve(lines.size());
    for (auto& raw : lines) {
      if (raw.empty()) {
-@@ -36,20 +38,22 @@ DmenuStdinProvider::DmenuStdinProvider(std::vector<std::string> lines, std::stri
+@@ -36,20 +38,21 @@
  }
  
  std::vector<LauncherResult> DmenuStdinProvider::query(std::string_view text) const {
 -  auto makeResult = [](const Line& line, double score) {
 +  const std::string& activeGlyph = m_glyph.empty() ? "terminal" : m_glyph;
-+
 +  auto makeResult = [&activeGlyph](const Line& line, double score) {
      LauncherResult r;
      r.id = line.raw;
@@ -119,10 +111,9 @@ index 2b2aaa2a0..77e2ec47d 100644
      return result;
    };
 diff --git a/src/launcher/dmenu_stdin_provider.h b/src/launcher/dmenu_stdin_provider.h
-index 50ff0e45f..139da039d 100644
 --- a/src/launcher/dmenu_stdin_provider.h
 +++ b/src/launcher/dmenu_stdin_provider.h
-@@ -16,7 +16,7 @@ public:
+@@ -16,7 +16,7 @@
  
    // `lines` are raw candidate lines. `completion` fires exactly once: with the chosen
    // line on activate, or nullopt on cancel (panel closed without a selection).
@@ -131,14 +122,7 @@ index 50ff0e45f..139da039d 100644
  
    [[nodiscard]] std::string_view defaultPrefix() const override { return ""; }
    [[nodiscard]] std::string_view id() const override { return m_id; }
-@@ -31,12 +31,14 @@ private:
-   struct Line {
-     std::string raw;
-     std::string title;
-+    std::string glyph;
-     std::string subtitle;
-     std::string searchable;
-   };
+@@ -37,6 +37,7 @@
  
    std::vector<Line> m_lines;
    std::string m_id;

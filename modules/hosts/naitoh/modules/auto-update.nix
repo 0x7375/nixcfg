@@ -27,7 +27,7 @@
               nix
               git
               openssh
-              unstable.tack
+              tack
             ];
             script = ''
               set -euo pipefail

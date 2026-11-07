@@ -1,9 +1,8 @@
 diff --git a/src/shell/notification/notification_toast.cpp b/src/shell/notification/notification_toast.cpp
-index 4e3d6eb66..13baf3a46 100644
 --- a/src/shell/notification/notification_toast.cpp
 +++ b/src/shell/notification/notification_toast.cpp
-@@ -831,7 +831,7 @@ void NotificationToast::addPopup(const Notification& n) {
-   entry.notificationId = n.id;
+@@ -916,7 +916,7 @@
+   entry.targetOutput = m_followFocusedOutput ? m_focusedOutput : nullptr;
    entry.appName = notificationDisplayAppName(n);
    entry.summary = n.summary;
 -  entry.body = n.body;

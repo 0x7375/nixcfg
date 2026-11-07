@@ -71,7 +71,7 @@
 
           iconTheme = mkThemeOption {
             name = "Gruvbox-Plus";
-            package = pkgs.unstable.gruvbox-plus-icons;
+            package = pkgs.gruvbox-plus-icons;
           };
 
           cursorTheme =
@@ -88,12 +88,6 @@
         };
 
       config = {
-        nixpkgs.overlays = [
-          (final: _: {
-            # inherit (final.unstable) gruvbox-gtk-theme;
-          })
-        ];
-
         programs.dconf.enable = true;
 
         vars = {

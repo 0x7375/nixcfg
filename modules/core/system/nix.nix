@@ -32,7 +32,7 @@
         setNixPath = false;
       };
 
-      packages = [ pkgs.unstable.tack ];
+      packages = [ pkgs.tack ];
 
       nix =
         let
@@ -135,6 +135,6 @@
     }:
     {
       sops.secrets.github_token.owner = config.me.user;
-      packages = [ pkgs.unstable.tack ];
+      packages = [ pkgs.tack ];
     };
 }
