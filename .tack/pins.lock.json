@@ -77,6 +77,14 @@
     "narHash": "sha256-wBlIuAUKFO1+C7ZCho0p2z1Dpc4szo9MSfbbAs6rCSQ=",
     "lastModified": 1783358693
   },
+  "mango": {
+    "type": "github",
+    "owner": "mangowm",
+    "repo": "mango",
+    "rev": "21f80a93bae634372c188ec3e50735e4c362e78e",
+    "narHash": "sha256-2RLkniNvhc9x0FravDTctqgCoaDzN8gMMyO1ZaTaxAU=",
+    "lastModified": 1793888034
+  },
   "mnw": {
     "type": "github",
     "owner": "Gerg-L",
@@ -154,6 +162,14 @@
     "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1108983.f9a75f41be3a/nixexprs.tar.xz",
     "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
     "narHash": "sha256-Q62pssAT9r01POiSyXW0IPXBWhntiKqMhzlsp3bsl5I="
+  },
+  "noctalia": {
+    "type": "github",
+    "owner": "noctalia-dev",
+    "repo": "noctalia",
+    "rev": "815aebe1cfd79c9a18197441eea92f0b275035fc",
+    "narHash": "sha256-j6EccQtLK45fYjA5uyUHXW8jxz0gYVxW2SE+pn5UA0Y=",
+    "lastModified": 1793300732
   },
   "npr": {
     "type": "github",

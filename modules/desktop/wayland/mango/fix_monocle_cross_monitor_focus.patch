@@ -1,0 +1,13 @@
+diff --git a/src/dispatch/bind.c b/src/dispatch/bind.c
+index 6ea176d3..e11ed5ee 100644
+--- a/src/dispatch/bind.c
++++ b/src/dispatch/bind.c
+@@ -249,7 +249,7 @@ int32_t focus_direction(const Arg *arg) {
+ 		return 0;
+ 
+ 	Client *sel = server.selected_monitor->sel;
+-	if (is_monocle_layout(server.selected_monitor) && sel && !sel->isfloating &&
++	if (false && is_monocle_layout(server.selected_monitor) && sel && !sel->isfloating &&
+ 		(arg->i == LEFT || arg->i == RIGHT)) {
+ 		Arg a = *arg;
+ 		a.i = (arg->i == LEFT) ? PREV : NEXT;

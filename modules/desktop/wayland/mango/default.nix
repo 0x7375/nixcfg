@@ -67,7 +67,9 @@
       config = {
         nixpkgs.overlays = [
           (final: prev: {
-            inherit (final.auto) mango;
+            mango = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
+              patches = [ ./fix_monocle_cross_monitor_focus.patch ];
+            });
           })
         ];
 

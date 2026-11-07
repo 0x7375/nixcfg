@@ -103,3 +103,9 @@ url = "cb:0x7E/karabiner-ts"
 
 [inputs.nixcord]
 url = "gh:4evy/nixcord"
+
+[inputs.mango]
+url = "gh:mangowm/mango"
+
+[inputs.noctalia]
+url = "gh:noctalia-dev/noctalia/v5.4.1"

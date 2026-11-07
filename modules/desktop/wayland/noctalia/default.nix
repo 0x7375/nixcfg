@@ -1,3 +1,5 @@
+{ inputs, ... }:
+
 {
   flake.modules.nixos.wayland =
     {
@@ -153,7 +155,8 @@
 
         nixpkgs.overlays = [
           (final: prev: {
-            noctalia = final.unstable.noctalia.overrideAttrs (old: {
+
+            noctalia = inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
               doInstallCheck = false;
               patches = (old.patches or [ ]) ++ [
                 ./patches/truncate_ssid.patch
