@@ -36,6 +36,8 @@ let
         "https://keybr.com"
         "https://discord.com"
         "https://claude.ai"
+        "https://openai.com"
+        "https://chatgpt.com"
         "https://gemini.google.com"
         "https://0xaa.me"
       ];
