@@ -71,7 +71,7 @@
       systemd.timers.flake-update = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "weekly";
+          OnCalendar = "Mon,Thu 09:00:00";
           Persistent = true;
         };
       };
