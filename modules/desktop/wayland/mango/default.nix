@@ -49,13 +49,13 @@
                     inherit (output.position) x y;
                   in
                   [
-                    "monitorrule = name:${monitor},scale:${toString cfg.scaling},x:${toString x},y:${toString y}\n"
+                    "monitor_rule = name:${monitor},scale:${toString cfg.scaling},x:${toString x},y:${toString y}\n"
                   ]
                   ++ map (tag: ''
                     bind = SUPER,${tag},viewcrossmon,${tag},${monitor}
                     bind = SUPER+SHIFT,${tag},tagcrossmon,${tag},${monitor}
                     bind = SUPER+CTRL,${tag},comboview,${tag},${monitor}
-                    tagrule = id:${tag},monitor_name:${monitor},no_hide:1,layout_name:monocle
+                    tag_rule = id:${tag},monitor_name:${monitor},no_hide:1,layout_name:monocle
                   '') output.tags
                 ) profile.monitors
               )
@@ -67,17 +67,7 @@
       config = {
         nixpkgs.overlays = [
           (final: prev: {
-            # pinned to 15.4 until ipc tag client count is fixed
-            mango = final.unstable.mango.overrideAttrs (old: rec {
-              version = "0.15.4";
-              patches = [ ./no_border_in_monocle.patch ];
-
-              src = pkgs.fetchFromGitHub {
-                inherit (old.src) owner repo;
-                tag = version;
-                hash = "sha256-f5l8fsEqaX37sw4tAXpKQ4D3MOfrSQyulAvmUJgkqh8=";
-              };
-            });
+            inherit (final.auto) mango;
           })
         ];
 
@@ -155,10 +145,13 @@
               in
               "${bindStr},spawn,${cfg.cmd}";
 
-            assignRules = lib.map (cfg: "tags:${cfg.workspace},appid:${cfg.name}") config.me.desktop.assign;
+            assignRules = lib.map (cfg: "tags:${cfg.workspace},app_id:${cfg.name}") config.me.desktop.assign;
 
             floatingRules = lib.map (
-              cfg: "isfloating:${if cfg.enable then "1" else "0"},${cfg.type}:${cfg.name}"
+              cfg:
+              "is_floating:${if cfg.enable then "1" else "0"},${
+                if cfg.type == "appid" then "app_id" else cfg.type
+              }:${cfg.name}"
             ) config.me.desktop.floating;
 
             mkMangoKeyValue =
@@ -172,42 +165,45 @@
             stripHash = true;
             generator = lib.generators.toKeyValue { mkKeyValue = mkMangoKeyValue; };
             value = p: {
-              numlockon = 1;
+              numlock_on = 1;
               repeat_rate = 30;
               repeat_delay = 200;
               xkb_rules_layout = "us";
               xkb_rules_options = "compose:menu";
-              sloppyfocus = 1;
-              warpcursor = 1;
+              sloppy_focus = 1;
+              warp_cursor = 1;
               focus_on_activate = 1;
               trackpad_natural_scrolling = 1;
-              disable_while_typing = 1;
+              trackpad_disable_while_typing = 1;
               drag_tile_to_tile = 1;
               cursor_size = 24;
 
               circle_layout = "tile,monocle";
 
+              monocle_tab_mode = 0;
+              monocle_no_border = 1;
+
               # very buggy electron + nvidia otherwise
-              syncobj_enable = 1;
+              sync_obj_enable = 1;
 
               exchange_cross_monitor = 1;
               scratchpad_cross_monitor = 1;
               focus_cross_monitor = 1;
 
               no_border_when_single = 1;
-              borderpx = 4;
-              gappih = 0;
-              gappiv = 0;
-              gappoh = 0;
-              gappov = 0;
+              border_px = 4;
+              gap_inner_horizontal = 0;
+              gap_inner_vertical = 0;
+              gap_outer_horizontal = 0;
+              gap_outer_vertical = 0;
               border_radius = 0;
-              bordercolor = "0x${p.bg1}ff";
-              focuscolor = "0x${p.fg2}ff";
-              globalcolor = "0x${p.fg3}ff";
-              urgentcolor = "0x${p.red}ff";
-              scratchpadcolor = "0x${p.blue}ff";
-              rootcolor = "0x${p.bg0}ff";
-              overlaycolor = "0x${p.bg1}ff";
+              border_color = "0x${p.bg1}ff";
+              focus_color = "0x${p.fg2}ff";
+              global_color = "0x${p.fg3}ff";
+              urgent_color = "0x${p.red}ff";
+              scratchpad_color = "0x${p.blue}ff";
+              root_color = "0x${p.bg0}ff";
+              overlay_color = "0x${p.bg1}ff";
 
               blur = 0;
               shadows = 0;
@@ -215,17 +211,17 @@
               enable_hotarea = 0;
 
               new_is_master = 1;
-              default_mfact = "0.50";
-              default_nmaster = 1;
+              default_master_factor = "0.50";
+              default_master_count = 1;
 
-              windowrule = [
-                "tags:3,appid:${config.me.desktop.browser}"
-                "ignore_maximize:1,appid:${config.me.desktop.browser}"
-                "isfloating:1,title:About"
-                "isfloating:1,title:Organizer"
-                "isfloating:1,title:Preferences"
-                "isfloating:1,appid:Main|Matplotlib"
-                "isglobal:1,isfloating:1,title:Picture in picture"
+              window_rule = [
+                "tags:3,app_id:${config.me.desktop.browser}"
+                "ignore_maximize:1,app_id:${config.me.desktop.browser}"
+                "is_floating:1,title:About"
+                "is_floating:1,title:Organizer"
+                "is_floating:1,title:Preferences"
+                "is_floating:1,app_id:Main|Matplotlib"
+                "is_global:1,is_floating:1,title:Picture in picture"
               ]
               ++ assignRules
               ++ floatingRules;
@@ -236,7 +232,7 @@
                 # "${getExe pkgs.xwayland-satellite} :2"
               ];
 
-              exec-once =
+              exec_once =
                 let
                   env = builtins.concatStringsSep " " [
                     "PATH"
@@ -250,12 +246,13 @@
                     "__GLX_VENDOR_LIBRARY_NAME"
                     "TERMINAL"
                   ];
+                  importEnvironment = pkgs.writeShellScript "mango-import-environment" ''
+                    ${getExe' pkgs.dbus "dbus-update-activation-environment"} --systemd ${env}
+                    ${getExe' pkgs.systemd "systemctl"} --user import-environment ${env}
+                    ${getExe' pkgs.systemd "systemctl"} --user start mango-session.target
+                  '';
                 in
-                [
-                  "${getExe' pkgs.dbus "dbus-update-activation-environment"} --systemd ${env}"
-                  "${getExe' pkgs.systemd "systemctl"} --user import-environment ${env}"
-                  "${getExe' pkgs.systemd "systemctl"} --user start mango-session.target"
-                ]
+                [ "${importEnvironment}" ]
                 ++ map (_: _.cmd) (lib.filter (c: !c.always) (lib.attrValues config.me.desktop.startup));
 
               bind = [

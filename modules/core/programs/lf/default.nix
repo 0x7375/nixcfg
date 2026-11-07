@@ -480,7 +480,7 @@
         bind = [
           "SUPER,e,toggle_named_scratchpad,kitty-lf,none,kitty -1 --class kitty-lf -e ${lib.getExe pkgs.lf}"
         ];
-        windowrule = [ "isnamedscratchpad:1,width:1280,height:800,appid:kitty-lf" ];
+        window_rule = [ "is_named_scratchpad:1,width:1280,height:800,app_id:kitty-lf" ];
       };
 
       packages = with pkgs; [ libreoffice ];

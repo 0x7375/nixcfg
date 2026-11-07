@@ -13,7 +13,7 @@ pkgs.writeShellApplication {
   text =
     let
       # TODO: make this shit better
-      inherit (config.tinted.files.".config/mango/config.conf".value config.tinted.hex.dark) borderpx;
+      inherit (config.tinted.files.".config/mango/config.conf".value config.tinted.hex.dark) border_px;
     in
     # bash
     ''
@@ -33,7 +33,7 @@ pkgs.writeShellApplication {
 
       case "$1" in
         area)
-          clients=$(mmsg get all-clients | jq -r '.clients[] | select(.is_visible) | (if .is_fullscreen then 0 else ${toString borderpx} end) as $b | "\(.x + $b),\(.y + $b) \(.width - 2*$b)x\(.height - 2*$b)"')
+          clients=$(mmsg get all-clients | jq -r '.clients[] | select(.is_visible) | (if .is_fullscreen then 0 else ${toString border_px} end) as $b | "\(.x + $b),\(.y + $b) \(.width - 2*$b)x\(.height - 2*$b)"')
           geom=$(echo "$clients" | slurp)
           [[ -z "$geom" ]] && exit 1
           

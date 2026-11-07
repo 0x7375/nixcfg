@@ -31,7 +31,7 @@
 
     time.hardwareClockInLocalTime = true;
 
-    tinted.files.".config/mango/config.conf".value.exec-once = [
+    tinted.files.".config/mango/config.conf".value.exec_once = [
       "mmsg dispatch viewcrossmon,5,HDMI-A-1 && mmsg dispatch viewcrossmon,1,HDMI-A-2"
     ];
 
