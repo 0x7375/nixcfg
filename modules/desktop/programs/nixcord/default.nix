@@ -33,7 +33,7 @@
           alwaysTrust.enable = true;
           betterSettings.enable = true;
           clearUrls.enable = true;
-          expressionCloner.enable = true;
+          expressionManager.enable = true;
           crashHandler.enable = true;
           noOnboardingDelay.enable = true;
           noReplyMention.enable = true;
