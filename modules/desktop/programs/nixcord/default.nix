@@ -1,5 +1,4 @@
 {
-  # TODO: darwin fails to build
   flake.modules.nixos.desktop =
     { config, ... }:
     {
@@ -16,14 +15,11 @@
         }
       ];
 
-      unfree-packages = [ "discord" ];
-
       programs.nixcord = {
         enable = true;
-        discord = {
-          openASAR.enable = false;
-          vencord.enable = true;
-        };
+        discord.enable = false;
+        vesktop.enable = true;
+
         inherit (config.me) user;
         config.plugins = {
           fixCodeblockGap.enable = true;
