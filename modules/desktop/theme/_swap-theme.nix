@@ -111,6 +111,5 @@ pkgs.writeShellApplication {
           ''
       }
       pkill -USR1 nvim
-      pkill -USR1 kitty
     '';
 }

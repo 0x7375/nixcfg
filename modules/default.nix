@@ -83,7 +83,7 @@ in
           wayland
           dev
           docker
-          kitty
+          foot
           preservation
         ]
       );
@@ -118,7 +118,7 @@ in
           wayland
           dev
           preservation
-          kitty
+          foot
         ]
       );
 

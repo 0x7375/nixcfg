@@ -142,6 +142,13 @@
             bind k run-shell "tmux popup -E ${getExe pkgs.my.tmux-sessionizer} || true"
             bind M new-window "man -k . | ${getExe pkgs.fzf} --reverse --padding 1 | ${getExe pkgs.gawk} '{print $1}' ${lib.optionalString pkgs.stdenv.isDarwin "| tr -d '()0-9' "}| xargs man"
 
+            # scroll only line per step (foot will send multiple scroll input per mouse wheel step)
+            bind -T copy-mode WheelUpPane send-keys -X -N 1 scroll-up
+            bind -T copy-mode WheelDownPane send-keys -X -N 1 scroll-down
+
+            bind -T copy-mode-vi WheelUpPane send-keys -X -N 1 scroll-up
+            bind -T copy-mode-vi WheelDownPane send-keys -X -N 1 scroll-down
+
             # navigate prompts
             bind -n M-p copy-mode \; \
               send -X start-of-line \; \

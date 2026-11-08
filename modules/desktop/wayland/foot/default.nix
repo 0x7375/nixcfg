@@ -17,15 +17,16 @@
         regular4 = p.blue;
         regular5 = p.magenta;
         regular6 = p.cyan;
-        regular7 = p.fg3; # completion text
-        bright0 = p.bg3;
+        regular7 = p.fg4; # completion text
+
+        bright0 = p.bg2;
         bright1 = p.red;
         bright2 = p.green;
         bright3 = p.yellow;
-        bright4 = p.fg0;
-        bright5 = p.bg3;
-        bright6 = p.bg2;
-        bright7 = p.bg0;
+        bright4 = p.blue;
+        bright5 = p.magenta;
+        bright6 = p.cyan;
+        bright7 = p.fg0;
       };
     in
     {
@@ -37,6 +38,16 @@
       me.desktop.startup.foot = "${lib.getExe pkgs.foot} --server";
 
       xdg.terminal-exec.settings.default = [ "footclient.desktop" ];
+
+      nixpkgs.overlays = [
+        (final: prev: {
+          foot = prev.foot.overrideAttrs (old: {
+            patches = (old.patches or [ ]) ++ [
+              ./usable_scrolling.patch
+            ];
+          });
+        })
+      ];
 
       programs.foot = {
         enable = true;
@@ -65,7 +76,7 @@
 
             scrollback = {
               lines = 10000;
-              multiplier = 3;
+              multiplier = 18.0;
               indicator-position = "relative";
               indicator-format = "line";
             };
@@ -91,8 +102,8 @@
               font-reset = "Mod1+Shift+r";
             };
 
-            colors = mkColors dark;
-            colors2 = mkColors light;
+            colors-dark = mkColors dark;
+            colors-light = mkColors light;
           };
       };
     };

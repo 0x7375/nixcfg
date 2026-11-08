@@ -13,7 +13,7 @@ pkgs.writeShellApplication {
       file
       w3m
       delta
-      kitty
+      chafa
       imagemagick
       ffmpegthumbnailer
       poppler-utils
@@ -26,9 +26,8 @@ pkgs.writeShellApplication {
       ]
     );
   text = ''
-    kitty_preview() {
-      kitten icat --stdin no --transfer-mode memory --place "''${width}x''${height}@''${x}x''${y}" "$1" </dev/null >/dev/tty
-      exit 1
+    chafa_preview() {
+      chafa --format sixels --size "''${width}x''${height}" "$1"
     }
 
     preview_cached() {
@@ -37,7 +36,7 @@ pkgs.writeShellApplication {
         [ -d "$dir" ] || mkdir -p -- "$dir"
         "$@"
       fi
-      kitty_preview "$cache"
+      chafa_preview "$cache"
     }
 
     hash() {
@@ -47,8 +46,6 @@ pkgs.writeShellApplication {
     file="$1"
     width="$2"
     height="$3"
-    x="$4"
-    y="$5"
 
     case "''${file##*.}" in
       pem | env | gpg | keyring)
@@ -69,7 +66,7 @@ pkgs.writeShellApplication {
           && [ "$orientation" != TopLeft ]; then
           preview_cached magick -- "$file" -auto-orient "$cache"
         else
-          kitty_preview "$file"
+          chafa_preview "$file"
         fi
         ;;
       video/*)

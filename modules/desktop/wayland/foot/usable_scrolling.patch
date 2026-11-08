@@ -1,0 +1,46 @@
+diff --git a/input.c b/input.c
+index 6a829a70..456fb8f6 100644
+--- a/input.c
++++ b/input.c
+@@ -3365,12 +3365,9 @@ mouse_scroll(struct seat *seat, int amount, enum wl_pointer_axis axis)
+ }
+ 
+ static double
+-mouse_scroll_multiplier(const struct terminal *term, const struct seat *seat)
++mouse_scroll_multiplier(const struct terminal *term, bool continuous)
+ {
+-    return (term->grid == &term->normal ||
+-            (term_mouse_grabbed(term, seat) && term->alt_scrolling))
+-        ? term->conf->scrollback.multiplier
+-        : 1.0;
++    return continuous ? term->conf->scrollback.multiplier : 3.0;
+ }
+ 
+ static void
+@@ -3397,7 +3394,7 @@ wl_pointer_axis(void *data, struct wl_pointer *wl_pointer,
+      * anything.
+      */
+     seat->mouse.aggregated[axis] +=
+-        mouse_scroll_multiplier(term, seat) * wl_fixed_to_double(value);
++        mouse_scroll_multiplier(term, true) * wl_fixed_to_double(value);
+     if (fabs(seat->mouse.aggregated[axis]) < seat->mouse_focus->cell_height)
+         return;
+ 
+@@ -3422,7 +3419,7 @@ wl_pointer_axis_discrete(void *data, struct wl_pointer *wl_pointer,
+     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL) {
+         /* Treat mouse wheel left/right as regular buttons */
+     } else
+-        amount *= mouse_scroll_multiplier(seat->mouse_focus, seat);
++        amount *= mouse_scroll_multiplier(seat->mouse_focus, false);
+ 
+     mouse_scroll(seat, amount, axis);
+ }
+@@ -3457,7 +3454,7 @@ wl_pointer_axis_value120(void *data, struct wl_pointer *wl_pointer,
+      * keep what's left (this value will always be less than the
+      * per-line value).
+      */
+-    const double multiplier = mouse_scroll_multiplier(seat->mouse_focus, seat);
++    const double multiplier = mouse_scroll_multiplier(seat->mouse_focus, false);
+     const double per_line = 120. / multiplier;
+ 
+     seat->mouse.aggregated_120[axis] += (double)value120;

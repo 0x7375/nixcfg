@@ -12,9 +12,6 @@
     let
       inherit (pkgs.stdenv) isLinux;
       previewer = lib.getExe (import ./_previewer.nix { inherit isLinux pkgs; });
-      cleaner = pkgs.writeShellScript "cleaner" ''
-        exec kitten icat --clear --stdin no --transfer-mode memory </dev/null >/dev/tty
-      '';
     in
     {
       nixpkgs.overlays = [
@@ -33,7 +30,7 @@
         lf
         ouch
         perlPackages.FileMimeInfo
-        kitty
+        chafa
       ];
 
       hj.xdg.config.files."lf/lfrc".text =
@@ -50,8 +47,6 @@
         # bash
         ''
           set previewer ${previewer}
-          set cleaner ${cleaner}
-
           set filesep "\n"
           set hidden
           set noicons
@@ -479,9 +474,9 @@
     {
       tinted.files.".config/mango/config.conf".value = {
         bind = [
-          "SUPER,e,toggle_named_scratchpad,kitty-lf,none,kitty -1 --class kitty-lf -e ${lib.getExe pkgs.lf}"
+          "SUPER,e,toggle_named_scratchpad,foot-lf,none,footclient --app-id foot-lf -e ${lib.getExe pkgs.lf}"
         ];
-        window_rule = [ "is_named_scratchpad:1,width:1280,height:800,app_id:kitty-lf" ];
+        window_rule = [ "is_named_scratchpad:1,width:1280,height:800,app_id:foot-lf" ];
       };
 
       packages = with pkgs; [ libreoffice ];
