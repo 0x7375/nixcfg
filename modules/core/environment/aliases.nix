@@ -262,6 +262,47 @@
             esac
           }
 
+          nix() {
+            local allow_unfree=0
+            local parse_options=1
+            local -a args=()
+
+            for arg in "$@"; do
+              if (( parse_options )) && [[ "$arg" == "--" ]]; then
+                parse_options=0
+                args+=("$arg")
+              elif (( parse_options )) && [[ "$arg" == "--unfree" ]]; then
+                allow_unfree=1
+              else
+                args+=("$arg")
+              fi
+            done
+
+            if (( allow_unfree )); then
+              set -- "''${args[@]}"
+
+              case "$1" in
+                flake|profile)
+                  local cmd=$1
+                  local subcmd=''${2-}
+                  if [[ -n "$subcmd" ]]; then
+                    shift 2
+                    NIXPKGS_ALLOW_UNFREE=1 command nix "$cmd" "$subcmd" --impure "$@"
+                  else
+                    NIXPKGS_ALLOW_UNFREE=1 command nix "$@"
+                  fi
+                  ;;
+                *)
+                  local cmd=$1
+                  shift
+                  NIXPKGS_ALLOW_UNFREE=1 command nix "$cmd" --impure "$@"
+                  ;;
+              esac
+            else
+              command nix "$@"
+            fi
+          }
+
           r() {
             ${getExe' pkgs.coreutils "realpath"} $(where $1);
           }
