@@ -26,12 +26,12 @@ diff --git a/src/nvim/normal.c b/src/nvim/normal.c
 index 1e211149703c84d9df9519c344153b8a23c7398b..fffee621186be3ccdc921b4db843b553f161f27e 100644
 --- a/src/nvim/normal.c
 +++ b/src/nvim/normal.c
-@@ -2063,6 +2063,15 @@ static void display_showcmd(void)
+@@ -2033,6 +2033,15 @@ void display_showcmd(void)
      }
      return;
    }
 +  if (*p_sloc == 'w') {
-+    if (showcmd_is_clear) {
++    if (showcmd_is_clear && !vgetc_busy) {
 +      curwin->w_redr_status = true;
 +    } else {
 +      win_redr_winbar(curwin);
@@ -40,7 +40,7 @@ index 1e211149703c84d9df9519c344153b8a23c7398b..fffee621186be3ccdc921b4db843b553
 +    return;
 +  }
    if (*p_sloc == 't') {
-     if (showcmd_is_clear) {
+     if (showcmd_is_clear && !vgetc_busy) {
        redraw_tabline = true;
 diff --git a/src/nvim/options.lua b/src/nvim/options.lua
 index 20c000479c3226e9b91108b0206de6b4a7ab2ff9..c4ea32ce030ff5a908cd1bff61af22cb5bd8f420 100644
@@ -50,8 +50,10 @@ index 20c000479c3226e9b91108b0206de6b4a7ab2ff9..c4ea32ce030ff5a908cd1bff61af22cb
        abbreviation = 'sloc',
        cb = 'did_set_showcmdloc',
        defaults = 'last',
--      values = { 'last', 'statusline', 'tabline' },
-+      values = { 'last', 'statusline', 'tabline', 'winbar' },
+       schema = {
+-        enum = { 'last', 'statusline', 'tabline' },
++        enum = { 'last', 'statusline', 'tabline', 'winbar' },
+       },
        desc = [=[
          This option can be used to display the (partially) entered command in
          another location.  Possible values are:

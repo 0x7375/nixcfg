@@ -11,7 +11,7 @@
 
     let
       inputs = [
-        "auto-update"
+        "multiverse"
         "helium"
         "zen-browser"
       ];

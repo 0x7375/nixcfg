@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.naitoh =
-    { config, pkgs, ... }:
+    { config, mv, ... }:
     {
       me.services.bazarr = {
         subdomain = "subtitles";
@@ -9,7 +9,7 @@
 
       services.bazarr = {
         enable = true;
-        package = pkgs.auto.bazarr;
+        package = mv.tip.bazarr;
         openFirewall = true;
         group = config.me.mediaGroup;
         dataDir = "/data/main/.state/bazarr";

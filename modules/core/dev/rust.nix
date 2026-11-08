@@ -1,40 +1,44 @@
 {
   flake.modules.nixos.dev =
-    { pkgs, ... }:
+    { pkgs, mv, ... }:
     {
-      packages = with pkgs; [
-        bacon
-
-        unstable.rustc
-        unstable.cargo
-        unstable.clippy
-        unstable.clang
-        unstable.mold
-        (pkgs.rustPlatform.buildRustPackage (
-          let
-            src = pkgs.fetchFromGitHub {
-              owner = "0x7375";
-              repo = "maudfmt";
-              rev = "c9fb0cf82c57686e62bf627d8dbaabd7c8fd70e1";
-              hash = "sha256-67PiX92voaew8/JlzxfyiBRaO7982A263gG7B2ywnl8=";
-            };
-          in
-          {
-            pname = "maudfmt";
-            version = "unstable-2026-08-24";
-            inherit src;
-            cargoLock = {
-              lockFile = "${src}/Cargo.lock";
-              outputHashes = {
-                "prettyplease-0.2.37" = "sha256-fnhSiVKs/uhOJMNEnKj20z6Dm3bSz2k7mFThYtba/GE=";
+      packages =
+        with pkgs;
+        let
+          at = mv.at "2026-06-01";
+        in
+        [
+          bacon
+          at.rustc
+          at.cargo
+          at.clippy
+          at.clang
+          at.mold
+          (pkgs.rustPlatform.buildRustPackage (
+            let
+              src = pkgs.fetchFromGitHub {
+                owner = "0x7375";
+                repo = "maudfmt";
+                rev = "c9fb0cf82c57686e62bf627d8dbaabd7c8fd70e1";
+                hash = "sha256-67PiX92voaew8/JlzxfyiBRaO7982A263gG7B2ywnl8=";
               };
-            };
+            in
+            {
+              pname = "maudfmt";
+              version = "unstable-2026-08-24";
+              inherit src;
+              cargoLock = {
+                lockFile = "${src}/Cargo.lock";
+                outputHashes = {
+                  "prettyplease-0.2.37" = "sha256-fnhSiVKs/uhOJMNEnKj20z6Dm3bSz2k7mFThYtba/GE=";
+                };
+              };
 
-            doCheck = false;
-          }
-        ))
+              doCheck = false;
+            }
+          ))
 
-      ];
+        ];
 
       hj.xdg.data.files."cargo/config.toml".text = # toml
         ''

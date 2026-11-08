@@ -2,13 +2,13 @@
 
 {
   flake.modules.darwin.homeVpn =
-    { pkgs, ... }:
+    { mv, ... }:
     {
-      packages = [ pkgs.auto.tailscale-gui ];
+      packages = [ mv.tip.tailscale-gui ];
     };
 
   flake.modules.nixos.homeVpn =
-    { pkgs, config, ... }:
+    { mv, config, ... }:
     let
       inherit (config.me) user;
     in
@@ -26,7 +26,7 @@
 
       services.tailscale = {
         enable = true;
-        package = pkgs.auto.tailscale;
+        package = self.lib.withMainProgram "tailscale" mv.tip.tailscale;
         extraUpFlags = [
           "--operator=${user}"
         ];

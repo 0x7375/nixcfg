@@ -4,6 +4,7 @@
   flake.modules.nixos.naitoh =
     {
       config,
+      mv,
       pkgs,
       lib,
       ...
@@ -24,7 +25,7 @@
       };
 
       config = {
-        services.recyclarr.package = pkgs.auto.recyclarr;
+        services.recyclarr.package = self.lib.withMainProgram "recyclarr" mv.tip.recyclarr;
 
         nixflix = {
           enable = true;
@@ -78,19 +79,20 @@
               }
             );
 
-            settingsYml = pkgs.writeText "settings.yml"
-              # yaml
-            ''
-              resource_providers:
-                - name: local-sonarr-formats
-                  type: custom-formats
-                  path: /var/lib/recyclarr/custom_formats
-                  service: sonarr
-                - name: local-radarr-formats
-                  type: custom-formats
-                  path: /var/lib/recyclarr/custom_formats
-                  service: radarr
-            '';
+            settingsYml =
+              pkgs.writeText "settings.yml"
+                # yaml
+                ''
+                  resource_providers:
+                    - name: local-sonarr-formats
+                      type: custom-formats
+                      path: /var/lib/recyclarr/custom_formats
+                      service: sonarr
+                    - name: local-radarr-formats
+                      type: custom-formats
+                      path: /var/lib/recyclarr/custom_formats
+                      service: radarr
+                '';
           in
           [
             "d /var/lib/recyclarr/custom_formats 0755 recyclarr recyclarr - -"

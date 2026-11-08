@@ -1,8 +1,10 @@
+{ self, ... }:
+
 {
   flake.modules.nixos.naitoh =
     {
       config,
-      pkgs,
+      mv,
       ...
     }:
     {
@@ -18,7 +20,7 @@
       services.autobrr = {
         enable = true;
         openFirewall = true;
-        package = pkgs.auto.autobrr;
+        package = self.lib.withMainProgram "autobrr" mv.tip.autobrr;
         secretFile = config.sops.secrets.autobrr_session.path;
         settings = {
           host = "0.0.0.0";

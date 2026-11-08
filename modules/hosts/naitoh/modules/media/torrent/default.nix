@@ -4,6 +4,7 @@
   flake.modules.nixos.naitoh =
     {
       lib,
+      mv,
       config,
       pkgs,
       ...
@@ -24,7 +25,7 @@
       nixflix.torrentClients.qbittorrent = {
         enable = true;
         password._secret = config.sops.secrets."qbittorrent/pw".path;
-        package = pkgs.auto.qbittorrent-nox;
+        package = self.lib.withMainProgram "qbittorrent-nox" mv.tip.qbittorrent-nox;
         openFirewall = true;
         profileDir = "/data/main/.state/qBittorrent";
         serverConfig = {
@@ -104,7 +105,7 @@
       services.qui = {
         enable = true;
         user = config.services.qbittorrent.user;
-        package = pkgs.auto.qui;
+        package = self.lib.withMainProgram "qui" mv.tip.qui;
         group = config.services.qbittorrent.group;
         openFirewall = true;
         secretFile = config.sops.secrets.qui_session.path;

@@ -1,8 +1,10 @@
+{ self, ... }:
+
 {
   flake.modules.nixos.naitoh =
     {
       config,
-      pkgs,
+      mv,
       ...
     }:
     {
@@ -49,7 +51,7 @@
       nixflix.radarr = {
         enable = true;
         openFirewall = true;
-        package = pkgs.auto.radarr;
+        package = self.lib.withMainProgram "radarr" mv.tip.radarr;
         config = {
           mediaManagement.autoUnmonitorPreviouslyDownloadedMovies = true;
           apiKey._secret = config.sops.secrets."radarr/api_key".path;

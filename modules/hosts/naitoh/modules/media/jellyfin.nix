@@ -51,8 +51,8 @@
       nixflix.jellyfin = {
         enable = true;
         openFirewall = true;
-        package = pkgs.auto.jellyfin.override {
-          jellyfin-web = pkgs.auto.jellyfin-web.overrideAttrs (old: {
+        package = pkgs.jellyfin.override {
+          jellyfin-web = pkgs.jellyfin-web.overrideAttrs (old: {
             postInstall =
               (old.postInstall or "")
               + (

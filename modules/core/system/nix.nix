@@ -1,6 +1,15 @@
 { self, ... }:
 
 {
+  flake.lib.withMainProgram =
+    name: pkg:
+    pkg
+    // {
+      meta = (pkg.meta or { }) // {
+        mainProgram = name;
+      };
+    };
+
   flake.modules.generic.core =
     {
       config,
@@ -9,20 +18,16 @@
       lib,
       ...
     }:
+    let
+      mv = inputs.multiverse.multiverse.${pkgs.stdenv.hostPlatform.system}.fast;
+    in
     {
       nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) config.unfree-packages;
 
+      _module.args.mv = inputs.multiverse.multiverse.${pkgs.stdenv.hostPlatform.system}.fast;
+
       nixpkgs.overlays = [
         (final: prev: {
-          unstable = import inputs.nixpkgs-unstable {
-            inherit (final.stdenv.hostPlatform) system;
-            config.allowUnfreePredicate = config.nixpkgs.config.allowUnfreePredicate;
-          };
-          auto = import inputs.auto-update {
-            inherit (final.stdenv.hostPlatform) system;
-            config.allowUnfreePredicate = config.nixpkgs.config.allowUnfreePredicate;
-          };
-
           my = prev.my or { } // self.packages.${final.stdenv.hostPlatform.system};
         })
       ];
@@ -32,7 +37,7 @@
         setNixPath = false;
       };
 
-      packages = [ pkgs.tack ];
+      packages = [ (mv.version "tack" "1.0.1") ];
 
       nix =
         let
@@ -65,8 +70,7 @@
             nix-path = nixPath;
           };
           registry = {
-            unstable.flake = inputs.nixpkgs-unstable;
-            auto.flake = inputs.auto-update;
+            mv.flake = inputs.multiverse;
             n.flake = inputs.nixpkgs;
             nixpkgs.flake = inputs.nixpkgs;
             t = {
@@ -129,12 +133,12 @@
 
   flake.modules.generic.secrets =
     {
-      pkgs,
+      mv,
       config,
       ...
     }:
     {
       sops.secrets.github_token.owner = config.me.user;
-      packages = [ pkgs.tack ];
+      packages = [ (mv.version "tack" "1.0.1") ];
     };
 }

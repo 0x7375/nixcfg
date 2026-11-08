@@ -2,15 +2,15 @@
 
 let
   root = ./../../../..;
-  unstable = pkgs: inputs.nixpkgs-unstable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
   mkNeovim =
     {
       pkgs,
+      mv,
       lsp ? true,
       unfree ? false,
     }:
     inputs.mnw.lib.wrap pkgs {
-      neovim = (unstable pkgs).neovim-unwrapped.overrideAttrs (_: {
+      neovim = inputs.neovim.packages.${pkgs.stdenv.hostPlatform.system}.neovim.overrideAttrs (_: {
         doCheck = false;
         doInstallCheck = false;
         patches = [
@@ -34,7 +34,7 @@ let
         };
 
         start =
-          with (unstable pkgs).vimPlugins;
+          with pkgs.vimPlugins;
           [
             # ui
             cloak-nvim
@@ -71,7 +71,15 @@ let
             }
             vim-fugitive
             diffs-nvim
-            diffview-plus-nvim
+            {
+              pname = "diffview-plus-nvim";
+              src = pkgs.fetchFromGitHub {
+                owner = "dlyongemallo";
+                repo = "diffview-plus.nvim";
+                rev = "e54dc97a584e1ae410da9d4898adb8224437ad63";
+                hash = "sha256-xdsF8H052CKpR6KphljsEoBS9eMDDUls8Gwpt+wBcxc=";
+              };
+            }
             grug-far-nvim
             orgmode
 
@@ -136,14 +144,19 @@ let
             deadnix
             oxlint
           ]
-          ++ (with (unstable pkgs); [
-            rust-analyzer
-            cargo
-            rustc
-            clippy
-            clang
-            mold
-          ])
+          ++ (
+            let
+              at = mv.at "2026-06-01";
+            in
+            [
+              at.rust-analyzer
+              at.cargo
+              at.rustc
+              at.clippy
+              at.clang
+              at.mold
+            ]
+          )
         )
         ++ pkgs.lib.optionals unfree [ pkgs.intelephense ];
     };
@@ -152,12 +165,16 @@ in
   perSystem =
     { pkgs, ... }:
     {
-      packages.neovim = mkNeovim { inherit pkgs; };
+      packages.neovim = mkNeovim {
+        inherit pkgs;
+        mv = inputs.multiverse.multiverse.${pkgs.stdenv.hostPlatform.system}.fast;
+      };
     };
 
   flake.modules.generic.core =
     {
       pkgs,
+      mv,
       config,
       ...
     }:
@@ -171,7 +188,7 @@ in
       packages = [
         pkgs.my.fossify
         (mkNeovim {
-          inherit pkgs;
+          inherit pkgs mv;
           lsp = false;
           unfree = true;
         })
@@ -181,11 +198,11 @@ in
     };
 
   flake.modules.darwin.desktop =
-    { pkgs, ... }:
+    { pkgs, mv, ... }:
     {
       packages = [
         (mkNeovim {
-          inherit pkgs;
+          inherit pkgs mv;
           unfree = true;
         }).devMode
       ];
@@ -194,12 +211,13 @@ in
   flake.modules.nixos.desktop =
     {
       pkgs,
+      mv,
       ...
     }:
     {
       packages = [
         (mkNeovim {
-          inherit pkgs;
+          inherit pkgs mv;
           unfree = true;
         }).devMode
       ];

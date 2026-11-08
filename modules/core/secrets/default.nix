@@ -4,6 +4,7 @@
       pkgs,
       secrets,
       config,
+      mv,
       lib,
       ...
     }:
@@ -25,10 +26,16 @@
           // extra
         ) config.me.hostSecrets;
 
+        nixpkgs.overlays = [
+          (final: prev: {
+            mv-age-plugin-tpm = mv.version "age-plugin-tpm" "1.0.1";
+          })
+        ];
+
         packages = with pkgs; [
           sops
           age-plugin-fido2-hmac
-          unstable.age-plugin-tpm
+          mv-age-plugin-tpm
         ];
 
         sops.defaultSopsFile = "${secrets}/default.yaml";
@@ -80,7 +87,7 @@
 
           sops.age = {
             keyFile = "${persistDir}/etc/tpm_key";
-            plugins = with pkgs; [ unstable.age-plugin-tpm ];
+            plugins = [ pkgs.mv-age-plugin-tpm ];
           };
 
           packages = with pkgs; [ tpm2-tools ];

@@ -19,10 +19,6 @@
         # unfree-packages = [ "omnissa-horizon-client" ];
 
         packages = with pkgs; [
-          # (auto.discord.override {
-          #   # withOpenASAR = true;
-          #   withVencord = true;
-          # })
           # omnissa-horizon-client
           signal-desktop
           qbittorrent

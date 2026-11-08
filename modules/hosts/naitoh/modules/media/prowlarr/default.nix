@@ -1,8 +1,10 @@
+{ self, ... }:
+
 {
   flake.modules.nixos.naitoh =
     {
       lib,
-      pkgs,
+      mv,
       config,
       ...
     }:
@@ -46,13 +48,13 @@
           '') trackers}
         '';
 
-      services.flaresolverr.package = pkgs.auto.flaresolverr;
+      services.flaresolverr.package = self.lib.withMainProgram "flaresolver" mv.tip.flaresolverr;
 
       nixflix = {
         flaresolverr.enable = true;
         prowlarr = {
           enable = true;
-          package = pkgs.auto.prowlarr;
+          package = self.lib.withMainProgram "prowlarr" mv.tip.prowlarr;
           openFirewall = true;
           config = {
             apiKey._secret = config.sops.secrets."prowlarr/api_key".path;

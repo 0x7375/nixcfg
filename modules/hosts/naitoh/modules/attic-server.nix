@@ -1,5 +1,3 @@
-{ self, ... }:
-
 {
   flake.modules.nixos.naitoh =
     { config, ... }:
@@ -7,16 +5,6 @@
       inherit (config.me.services.attic) port url;
     in
     {
-      nixpkgs.overlays = [
-        (final: prev: {
-          attic-server = (prev.crossPkgs or prev).attic-server.overrideAttrs (old: {
-            env = (old.env or { }) // {
-              RUSTFLAGS = "-C target-feature=-aes,-sha2,-crypto";
-            };
-          });
-        })
-      ];
-
       networking.firewall.allowedTCPPorts = [ port ];
 
       me.hostSecrets.attic_server_token = { };

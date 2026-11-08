@@ -6,6 +6,7 @@
       lib,
       config,
       pkgs,
+      mv,
       ...
     }:
     let
@@ -18,7 +19,7 @@
     {
       nixpkgs.overlays = [
         (final: prev: {
-          inherit (final.unstable) lf;
+          lf = self.lib.withMainProgram "lf" (mv.version "lf" "42");
 
           ouch = (prev.crossPkgs or prev).ouch.override {
             enableUnfree = true;

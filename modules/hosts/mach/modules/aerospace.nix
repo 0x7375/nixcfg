@@ -3,6 +3,7 @@
     {
       config,
       pkgs,
+      mv,
       lib,
       ...
     }:
@@ -11,7 +12,7 @@
     in
     {
       services.aerospace = {
-        package = pkgs.unstable.aerospace;
+        package = mv.version "aerospace" "0.21.3-Beta";
         enable = true;
         settings =
           let

@@ -2,6 +2,7 @@
   flake.modules.nixos.desktop =
     {
       pkgs,
+      mv,
       config,
       lib,
       ...
@@ -9,7 +10,7 @@
     {
       nixpkgs.overlays = [
         (final: prev: {
-          inherit (final.unstable) xdg-desktop-portal-termfilechooser;
+          xdg-desktop-portal-termfilechooser = mv.version "xdg-desktop-portal-termfilechooser" "1.4.3";
 
           file-handler = pkgs.stdenv.mkDerivation {
             name = "file-handler";

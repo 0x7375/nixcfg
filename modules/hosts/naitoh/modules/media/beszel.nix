@@ -1,6 +1,8 @@
+{ self, ... }:
+
 {
   flake.modules.nixos.naitoh =
-    { config, ... }:
+    { config, mv, ... }:
     let
       inherit (config.services.beszel.hub) port;
     in
@@ -38,6 +40,12 @@
           install -D -m 600 "$CREDENTIALS_DIRECTORY/id_ed25519" "$STATE_DIRECTORY/beszel_data/id_ed25519"
         '';
       };
+
+      nixpkgs.overlays = [
+        (final: prev: {
+          beszel = self.lib.withMainProgram "beszel" mv.tip.beszel;
+        })
+      ];
 
       services.beszel = {
         hub = {

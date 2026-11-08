@@ -6,6 +6,7 @@
       lib,
       config,
       pkgs,
+      mv,
       modulesPath,
       ...
     }:
@@ -70,7 +71,7 @@
         peripheralFirmwareDirectory = inputs.asahi-firmware;
       };
 
-      packages = [ pkgs.unstable.avd-fw ];
+      packages = [ (mv.version "avd-fw" "2.0") ];
 
       boot.kernelPackages = lib.mkForce (
         (pkgs.linuxPackagesFor linuxAsahi).extend (

@@ -10,7 +10,7 @@
 
       nixpkgs.overlays = [
         (final: prev: {
-          kdePackages = prev.unstable.kdePackages;
+          # kdePackages = prev.unstable.kdePackages;
         })
       ];
 

@@ -15,12 +15,6 @@
     "narHash": "sha256-Uf8DiaJCn1YYAyaN4caLp+N38w8hTk2w3+08929/CW4=",
     "lastModified": 1783946559
   },
-  "auto-update": {
-    "type": "tarball",
-    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1108983.f9a75f41be3a/nixexprs.tar.xz",
-    "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
-    "narHash": "sha256-Q62pssAT9r01POiSyXW0IPXBWhntiKqMhzlsp3bsl5I="
-  },
   "disko": {
     "type": "github",
     "owner": "nix-community",
@@ -93,6 +87,14 @@
     "narHash": "sha256-VKKe8r4pwCGWZ3Yr9CPN129R4S3CKLSrlYqdYz3vKpM=",
     "lastModified": 1780772958
   },
+  "multiverse": {
+    "type": "github",
+    "owner": "fzakaria",
+    "repo": "nixpkgs-multiverse",
+    "rev": "d5e658e8ae8a3735512e1d11b537169f5911e7e1",
+    "narHash": "sha256-pAEqR9flODKfWAMC3H2JXXndnj2KVQKoLmbB3nF9DLM=",
+    "lastModified": 1794065979
+  },
   "nd": {
     "type": "git",
     "url": "https://codeberg.org/0x7E/nd",
@@ -100,6 +102,14 @@
     "rev": "a0f6db71c0a061ab9317b45047bfd945f98ae28c",
     "narHash": "sha256-bYb2gaBiuSod2TppyHStOylDbRqMu8LqSJvL7JN6WOw=",
     "lastModified": 1786666241
+  },
+  "neovim": {
+    "type": "github",
+    "owner": "nix-community",
+    "repo": "neovim-nightly-overlay",
+    "rev": "3dc8fa3b0b2220ffd0836012407b15aa6747d3fe",
+    "narHash": "sha256-yWAvE6T0QGm60MUNEvIpUK/VLJvjIDmnX+P/AKQwRyo=",
+    "lastModified": 1786867388
   },
   "nix-darwin": {
     "type": "github",
@@ -156,12 +166,6 @@
     "rev": "846e84d25c3d00c71a4ff8ffedbf08572eb7aebb",
     "narHash": "sha256-fKo9+KWNBiVrfG8HNx9JCMauF6o5YghH7PIQll+yryI=",
     "lastModified": 1783284305
-  },
-  "nixpkgs-unstable": {
-    "type": "tarball",
-    "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1108983.f9a75f41be3a/nixexprs.tar.xz",
-    "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
-    "narHash": "sha256-Q62pssAT9r01POiSyXW0IPXBWhntiKqMhzlsp3bsl5I="
   },
   "noctalia": {
     "type": "github",

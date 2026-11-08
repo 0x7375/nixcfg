@@ -18,11 +18,8 @@ url = "gh:nixos/nixpkgs/nixos-26.05"
 [inputs.nixpkgs-darwin]
 url = "gh:nixos/nixpkgs/nixpkgs-26.05-darwin"
 
-[inputs.nixpkgs-unstable]
-url = "nixpkgs:nixos-unstable"
-
-[inputs.auto-update]
-url = "nixpkgs:nixos-unstable"
+[inputs.multiverse]
+url = "gh:fzakaria/nixpkgs-multiverse"
 
 
 [inputs.flake-parts]
@@ -33,7 +30,6 @@ url = "gh:Gerg-L/mnw"
 
 [inputs.nixflix]
 url = "gh:kiriwalawren/nixflix"
-follows = { nixpkgs = "auto-update" }
 
 # darwin
 [inputs.nix-darwin]
@@ -80,11 +76,9 @@ url = "gh:nix-community/preservation"
 
 [inputs.helium]
 url = "gh:amaanq/helium-flake"
-follows = { nixpkgs = "auto-update" }
 
 [inputs.zen-browser]
 url = "gh:youwen5/zen-browser-flake"
-follows = { nixpkgs = "auto-update" }
 
 [inputs.nix-index-database]
 url = "gh:nix-community/nix-index-database"
@@ -103,6 +97,9 @@ url = "cb:0x7E/karabiner-ts"
 
 [inputs.nixcord]
 url = "gh:4evy/nixcord"
+
+[inputs.neovim]
+url = "gh:nix-community/neovim-nightly-overlay"
 
 [inputs.mango]
 url = "gh:mangowm/mango"

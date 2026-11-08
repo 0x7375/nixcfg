@@ -3,7 +3,7 @@
 {
   flake.modules.nixos.woz =
     {
-      pkgs,
+      mv,
       lib,
       ...
     }:
@@ -31,7 +31,7 @@
           # https://github.com/AsahiLinux/linux/issues/497
           # broken rn..........
           # force usb to disconnect/reconnect
-          ${lib.getExe pkgs.unstable.tuxvdmtool} disconnect || true
+          ${lib.getExe (mv.version "tuxvdmtool" "0.2.0-unstable-2026-03-15")} disconnect || true
         '';
 
       system.stateVersion = "25.11";

@@ -4,11 +4,12 @@
       config,
       lib,
       pkgs,
+      mv,
       ...
     }:
     let
       inherit (config.me.services.llama) port;
-      pkg = pkgs.auto.llama-cpp-vulkan;
+      pkg = mv.tip.llama-cpp-vulkan;
       backPort = 8089;
 
       brave-search-mcp = pkgs.buildNpmPackage rec {
