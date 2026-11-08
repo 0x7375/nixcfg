@@ -71,8 +71,8 @@
       systemd.timers.flake-update = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "Mon,Thu 09:00:00";
-          Persistent = true;
+          OnBootSec = "3d";
+          OnUnitActiveSec = "3d";
         };
       };
     };
