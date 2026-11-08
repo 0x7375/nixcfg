@@ -7,6 +7,8 @@
       ...
     }:
     {
+      me.uid = 1001;
+
       nixpkgs.overlays = lib.mkBefore [
         (final: prev: {
           crossPkgs = import prev.path {

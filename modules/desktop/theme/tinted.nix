@@ -1,7 +1,5 @@
-{ self, ... }:
-
 {
-  flake.modules.generic.nixos = {
+  flake.modules.nixos.core = {
     persistUser.directories = [
       ".cache/tabler-icons"
       ".local/state/tinted"

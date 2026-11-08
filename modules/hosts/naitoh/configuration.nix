@@ -22,6 +22,15 @@
           inputs.nixflix.inputs.vpn-confinement.nixosModules.default
         ];
 
+      me = {
+        tpm.enable = true;
+        boot.debug.enable = true;
+        # desktop = {
+        #   scaling = 1.2;
+        #   barFontSize = 11;
+        # };
+      };
+
       persist.directories = [
         "/data/main"
         "/var/lib/containers"

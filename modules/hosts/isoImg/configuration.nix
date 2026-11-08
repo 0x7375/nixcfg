@@ -9,6 +9,8 @@
     {
       imports = [ "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix" ];
 
+      me.user = "nixos";
+
       boot.supportedFilesystems = lib.mkForce [
         "btrfs"
         "cifs"

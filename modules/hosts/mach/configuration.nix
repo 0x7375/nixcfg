@@ -30,6 +30,13 @@
       ...
     }:
     {
+      me = rec {
+        desktop.terminal.font.size = 22;
+        home = "/Users/ayko";
+        hostname = "mach";
+        flakeDir = home + "/.config/nixcfg";
+      };
+
       activation = # bash
         ''
           # disable macos quarantine

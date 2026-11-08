@@ -12,6 +12,8 @@
     {
       imports = [ inputs.nixos-wsl.nixosModules.wsl ];
 
+      me.user = "nixos";
+
       packages = with pkgs; [
         xclip
       ];

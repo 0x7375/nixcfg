@@ -7,6 +7,8 @@
       ...
     }:
     {
+      me.tpm.enable = true;
+
       services.logind.settings.Login.HandleLidSwitch = "ignore";
       powerManagement.cpuFreqGovernor = "performance";
 

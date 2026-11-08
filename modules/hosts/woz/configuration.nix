@@ -13,6 +13,14 @@
         inputs.titdb.nixosModules.default
       ];
 
+      me = {
+        boot.encryption.enable = true;
+        desktop = {
+          scaling = 1.8;
+          barFontSize = 11;
+        };
+      };
+
       services.titdb = {
         enable = true;
         device = "/dev/input/event2";

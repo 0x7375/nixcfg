@@ -1,5 +1,14 @@
 {
   flake.modules.nixos.cray = { config, lib, ... }: {
+    me = {
+      tpm.enable = true;
+      boot = {
+        encryption.enable = true;
+        secureBoot.enable = true;
+      };
+      desktop.refreshRate = 240;
+    };
+
     systemd.coredump.enable = lib.mkForce true;
     boot.supportedFilesystems = [ "ntfs" ];
 
