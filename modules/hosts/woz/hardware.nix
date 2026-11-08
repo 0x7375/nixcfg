@@ -71,7 +71,7 @@
         peripheralFirmwareDirectory = inputs.asahi-firmware;
       };
 
-      packages = [ (mv.version "avd-fw" "2.0") ];
+      packages = [ (mv.version "avd-fw" "0.2") ];
 
       boot.kernelPackages = lib.mkForce (
         (pkgs.linuxPackagesFor linuxAsahi).extend (
