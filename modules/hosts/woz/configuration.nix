@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ self, inputs, ... }:
 
 {
   flake.modules.nixos.woz =
@@ -31,7 +31,7 @@
           # https://github.com/AsahiLinux/linux/issues/497
           # broken rn..........
           # force usb to disconnect/reconnect
-          ${lib.getExe (mv.version "tuxvdmtool" "0.2.0-unstable-2026-03-15")} disconnect || true
+          ${lib.getExe (self.lib.withMainProgram "tuxvdmtool" (mv.version "tuxvdmtool" "0.2.0-unstable-2026-03-15"))} disconnect || true
         '';
 
       system.stateVersion = "25.11";
