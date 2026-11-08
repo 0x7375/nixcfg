@@ -113,6 +113,8 @@
         };
       };
 
+      networking.firewall.allowedUDPPorts = [ 5353 ];
+
       systemd.services.systemd-resolved.serviceConfig.LogLevelMax = "notice";
 
       # Configure network proxy if necessary
