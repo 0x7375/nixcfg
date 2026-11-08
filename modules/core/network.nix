@@ -2,14 +2,21 @@
 
 {
   flake.modules.generic.network =
-    { lib, ... }:
+    { config, lib, ... }:
     {
-      environment.etc.hosts.text = lib.mkForce ''
-        127.0.0.1 localhost
-        255.255.255.255 broadcasthost
-        ::1 localhost
-        192.168.1.86 hilse
-      '';
+      environment.etc.hosts.text =
+        let
+          hosts = lib.flatten (
+            lib.mapAttrsToList (h: v: (lib.optional (v.ip != null) "${v.ip} ${h}")) config.me.hosts
+          );
+        in
+        lib.mkForce ''
+          127.0.0.1 localhost
+          255.255.255.255 broadcasthost
+          ::1 localhost
+          ${builtins.concatStringsSep "\n" hosts}
+          192.168.1.86 hilse
+        '';
     };
 
   flake.modules.darwin.network =
@@ -106,8 +113,6 @@
         };
       };
 
-      networking.firewall.allowedUDPPorts = [ 5353 ];
-
       systemd.services.systemd-resolved.serviceConfig.LogLevelMax = "notice";
 
       # Configure network proxy if necessary
@@ -129,6 +134,7 @@
 
   flake.modules.nixos.networkEnvironment =
     {
+      lib,
       config,
       secrets,
       ...

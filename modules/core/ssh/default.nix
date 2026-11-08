@@ -50,6 +50,17 @@
           KbdInteractiveAuthentication no
         '';
       };
+
+      # darwin.programs.ssh.extraConfig =
+      #   let
+      #     validHosts = lib.filterAttrs (_: v: v.ip != null) config.me.hosts;
+      #     hostEntries = lib.mapAttrsToList (h: v: ''
+      #       Host ${h}
+      #         HostName ${v.ip}
+      #     '') validHosts;
+      #   in
+      #   builtins.concatStringsSep "\n" hostEntries;
+
     };
 
   flake.modules.nixos.core =
