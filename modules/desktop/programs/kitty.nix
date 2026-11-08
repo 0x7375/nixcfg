@@ -1,3 +1,5 @@
+{ self, ... }:
+
 {
   flake.modules.nixos.kitty =
     { pkgs, ... }:
@@ -19,8 +21,15 @@
   };
 
   flake.modules.generic.kitty =
-    { config, ... }:
+    { mv, config, ... }:
     {
+      nixpkgs.overlays = [
+        (final: _: {
+          # earlier versions have a recursive memory leak
+          kitty = self.lib.withMainProgram "kitty" (mv.version "kitty" "0.49.2");
+        })
+      ];
+
       me.desktop.terminal = {
         name = "kitty";
         cmd = "kitty -1";
