@@ -48,13 +48,13 @@
           '') trackers}
         '';
 
-      services.flaresolverr.package = self.lib.withMainProgram "flaresolver" mv.tip.flaresolverr;
+      services.flaresolverr.package = self.lib.withMainProgram "flaresolverr" mv.tip.flaresolverr;
 
       nixflix = {
         flaresolverr.enable = true;
         prowlarr = {
           enable = true;
-          package = self.lib.withMainProgram "prowlarr" mv.tip.prowlarr;
+          package = self.lib.withMainProgram "Prowlarr" mv.tip.prowlarr;
           openFirewall = true;
           config = {
             apiKey._secret = config.sops.secrets."prowlarr/api_key".path;

@@ -10,13 +10,18 @@ let
       unfree ? false,
     }:
     inputs.mnw.lib.wrap pkgs {
-      neovim = inputs.neovim.packages.${pkgs.stdenv.hostPlatform.system}.neovim.overrideAttrs (_: {
-        doCheck = false;
-        doInstallCheck = false;
-        patches = [
-          ./allow_showcmdloc_winbar.patch
-        ];
-      });
+      neovim =
+        let
+          nvim = mv.version "neovim-unwrapped" "0.12.6";
+        in
+        nvim
+        // {
+          lua = pkgs.neovim-unwrapped.lua;
+
+          meta = nvim.meta // {
+            mainProgram = "nvim";
+          };
+        };
 
       initLua = builtins.readFile (root + /nvim/init.lua);
 

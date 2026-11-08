@@ -102,7 +102,7 @@ url = "gh:4evy/nixcord"
 url = "gh:nix-community/neovim-nightly-overlay"
 
 [inputs.mango]
-url = "gh:mangowm/mango"
+url = "gh:mangowm/mango/15e7d367077a2d1a72c88da761ab183228680823"
 
 [inputs.noctalia]
 url = "gh:noctalia-dev/noctalia/v5.4.1"

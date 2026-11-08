@@ -51,7 +51,7 @@
       nixflix.radarr = {
         enable = true;
         openFirewall = true;
-        package = self.lib.withMainProgram "radarr" mv.tip.radarr;
+        package = self.lib.withMainProgram "Radarr" mv.tip.radarr;
         config = {
           mediaManagement.autoUnmonitorPreviouslyDownloadedMovies = true;
           apiKey._secret = config.sops.secrets."radarr/api_key".path;
