@@ -117,8 +117,8 @@
           <C-z> = :suspend<Enter>
 
           [messages]
-          <C-h> = :cf -a Personal INBOX<Enter>
-          <C-l> = :cf -a Unicaen INBOX<Enter>
+          <A-h> = :cf -a Personal INBOX<Enter>
+          <A-l> = :cf -a Unicaen INBOX<Enter>
 
           q = :quit<Enter>
 
