@@ -19,23 +19,24 @@
 
         trackers = [
           {
-            host = "tk.v3x.tw";
+            name = "V3X";
+            hosts = [
+              "tk.v3x.tw"
+              "announce.v3x.club"
+            ];
             priority = 10;
           }
           {
-            host = "announce.v3x.club";
+            name = "C411";
+            hosts = [
+              "c411.org"
+              "tk.c411.tw"
+            ];
             priority = 10;
           }
           {
-            host = "c411.org";
-            priority = 10;
-          }
-          {
-            host = "tk.c411.tw";
-            priority = 10;
-          }
-          {
-            host = "tk.tr4ker.net";
+            name = "TR4KER";
+            hosts = [ "tk.tr4ker.net" ];
             priority = 10;
           }
         ];

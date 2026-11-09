@@ -43,9 +43,9 @@
     "type": "git",
     "url": "https://codeberg.org/0x7E/graine",
     "ref": "HEAD",
-    "rev": "167a321fc99bdb323b49bf15a62043cced4dc0e7",
-    "narHash": "sha256-SUz0Dijq/Lcy/e2oO6mpuJjeRCYTY4gpMHmCrPzCus4=",
-    "lastModified": 1794155249
+    "rev": "84dff03d5cd87a145eaf702c6266988676714a31",
+    "narHash": "sha256-jYb9MMXCAIxbAi3RaEOafzVmCV1GCHlcV1Ta97HE3Vs=",
+    "lastModified": 1794245933
   },
   "helium": {
     "type": "github",
