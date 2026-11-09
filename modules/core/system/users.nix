@@ -1,5 +1,3 @@
-{ self, ... }:
-
 {
   flake.modules.generic.core =
     {

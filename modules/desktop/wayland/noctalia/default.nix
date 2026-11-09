@@ -163,6 +163,8 @@
                 ./patches/glyph_dmenu_cli.patch
                 ./patches/original_critical_toast.patch
                 ./patches/hide_discord_toast_body.patch
+                # NOTE: until I update to a version with: https://github.com/noctalia-dev/noctalia/pull/5275
+                ./patches/discover_ical_calendar_colors.patch
               ];
             });
 
@@ -262,7 +264,8 @@
           wtype
         ];
 
-        sops.secrets.calendar_pw.owner = config.me.user;
+        sops.secrets.calendar_default_pw.owner = config.me.user;
+        sops.secrets.uni_pw.owner = config.me.user;
 
         hj.xdg.data.files = {
           "noctalia/plugins/mango-layout".source = ./plugins/mango_layout;
@@ -328,14 +331,25 @@
               };
               calendar = {
                 enabled = true;
-                account.default = {
-                  name = "default";
-                  provider = "custom";
-                  server_url = url;
-                  type = "caldav";
-                  username = "admin";
-                  credential_source = "file";
-                  password_file = config.sops.secrets.calendar_pw.path;
+                account = {
+                  default = {
+                    name = "default";
+                    provider = "custom";
+                    server_url = url;
+                    type = "caldav";
+                    username = "admin";
+                    credential_source = "file";
+                    password_file = config.sops.secrets.calendar_default_pw.path;
+                  };
+                  unicaen = {
+                    name = "unicaen";
+                    provider = "custom";
+                    server_url = "https://webmail.unicaen.fr";
+                    type = "caldav";
+                    username = "22205529@etu.unicaen.fr";
+                    credential_source = "file";
+                    password_file = config.sops.secrets.uni_pw.path;
+                  };
                 };
               };
 

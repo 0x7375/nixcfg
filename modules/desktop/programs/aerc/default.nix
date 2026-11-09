@@ -22,13 +22,21 @@
         categories = [ "Email" ];
       };
 
-      hj.xdg.config.files."aerc/accounts.conf" = {
-        type = "copy";
-        permissions = "0600";
-        text =
+      sops.secrets.full_name.owner = config.me.user;
+      sops.secrets.uni_email.owner = config.me.user;
+      sops.secrets.uni_username.owner = config.me.user;
+      sops.secrets.uni_pw.owner = config.me.user;
+
+      sops.templates."aerc-accounts.conf" = {
+        owner = config.me.user;
+        path = "${config.me.home}/.config/aerc/accounts.conf";
+        mode = "0600";
+
+        content =
           let
             inherit (config.me.host.securityKey) name;
             decryptCmd = "${pkgs.my.fido2-decrypt} ${config.me.host.securityKey.prfPath} ${./aerc_pw_${name}.age}";
+            uniPasswordCmd = "${pkgs.coreutils}/bin/cat ${config.sops.secrets.uni_pw.path}";
           in
           # ini
           ''
@@ -42,6 +50,16 @@
             cache-headers       = true
             copy-to             = Sent
             folders-exclude     = Notes
+
+            [Unicaen]
+            source              = imaps://${config.sops.placeholder.uni_username}@webmail.unicaen.fr:993
+            source-cred-cmd     = ${uniPasswordCmd}
+            outgoing            = smtps+plain://${config.sops.placeholder.uni_username}@smtp.unicaen.fr:465
+            outgoing-cred-cmd   = ${uniPasswordCmd}
+            default             = INBOX
+            from                = ${config.sops.placeholder.full_name} <${config.sops.placeholder.uni_email}>
+            cache-headers       = true
+            copy-to             = Sent
           '';
       };
 
@@ -99,6 +117,9 @@
           <C-z> = :suspend<Enter>
 
           [messages]
+          <C-h> = :cf -a Personal INBOX<Enter>
+          <C-l> = :cf -a Unicaen INBOX<Enter>
+
           q = :quit<Enter>
 
           j = :next<Enter>
