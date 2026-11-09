@@ -14,7 +14,14 @@
           ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64=${config.sops.placeholder.attic_server_token}
         '';
 
-      persist.directories = [ "/var/lib/private/atticd" ];
+      persist.directories = [
+        {
+          directory = "/var/lib/private/atticd";
+          user = "nobody";
+          group = "nogroup";
+          mode = "0755";
+        }
+      ];
 
       services.atticd = {
         enable = true;

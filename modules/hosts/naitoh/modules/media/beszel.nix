@@ -2,7 +2,12 @@
 
 {
   flake.modules.nixos.naitoh =
-    { config, mv, ... }:
+    {
+      lib,
+      config,
+      mv,
+      ...
+    }:
     let
       inherit (config.services.beszel.hub) port;
     in
@@ -14,7 +19,14 @@
         webSockets = true;
       };
 
-      persist.directories = [ "/var/lib/private/beszel-hub" ];
+      persist.directories = [
+        {
+          directory = "/var/lib/private/beszel-hub";
+          user = "nobody";
+          group = "nogroup";
+          mode = "0755";
+        }
+      ];
 
       networking.firewall.allowedTCPPorts = [ port ];
 
@@ -33,9 +45,17 @@
       '';
 
       systemd.services.beszel-hub = {
-        serviceConfig.LoadCredential = [
-          "id_ed25519:${config.sops.secrets."beszel/key".path}"
-        ];
+        serviceConfig = {
+          LoadCredential = [
+            "id_ed25519:${config.sops.secrets."beszel/key".path}"
+          ];
+
+          ExecStartPre = lib.mkForce [
+            "${config.services.beszel.hub.package}/bin/beszel-hub migrate up"
+            "${config.services.beszel.hub.package}/bin/beszel-hub migrate history-sync"
+          ];
+        };
+
         preStart = ''
           install -D -m 600 "$CREDENTIALS_DIRECTORY/id_ed25519" "$STATE_DIRECTORY/beszel_data/id_ed25519"
         '';
@@ -43,7 +63,7 @@
 
       nixpkgs.overlays = [
         (final: prev: {
-          beszel = self.lib.withMainProgram "beszel" mv.tip.beszel;
+          beszel = self.lib.withMainProgram "beszel" mv.latest.beszel;
         })
       ];
 

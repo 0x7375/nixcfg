@@ -25,7 +25,7 @@
       };
 
       config = {
-        services.recyclarr.package = self.lib.withMainProgram "recyclarr" mv.tip.recyclarr;
+        services.recyclarr.package = self.lib.withMainProgram "recyclarr" mv.latest.recyclarr;
 
         nixflix = {
           enable = true;

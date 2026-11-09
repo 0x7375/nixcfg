@@ -25,7 +25,7 @@
       nixflix.torrentClients.qbittorrent = {
         enable = true;
         password._secret = config.sops.secrets."qbittorrent/pw".path;
-        package = self.lib.withMainProgram "qbittorrent-nox" mv.tip.qbittorrent-nox;
+        package = self.lib.withMainProgram "qbittorrent-nox" mv.latest.qbittorrent-nox;
         openFirewall = true;
         profileDir = "/data/main/.state/qBittorrent";
         serverConfig = {
@@ -105,7 +105,7 @@
       services.qui = {
         enable = true;
         user = config.services.qbittorrent.user;
-        package = self.lib.withMainProgram "qui" mv.tip.qui;
+        package = self.lib.withMainProgram "qui" mv.latest.qui;
         group = config.services.qbittorrent.group;
         openFirewall = true;
         secretFile = config.sops.secrets.qui_session.path;

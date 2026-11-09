@@ -15,12 +15,19 @@
 
       me.hostSecrets.autobrr_session.owner = config.services.qbittorrent.user;
 
-      persist.directories = [ "/var/lib/private/autobrr" ];
+      persist.directories = [
+        {
+          directory = "/var/lib/private/autobrr";
+          user = "nobody";
+          group = "nogroup";
+          mode = "0755";
+        }
+      ];
 
       services.autobrr = {
         enable = true;
         openFirewall = true;
-        package = self.lib.withMainProgram "autobrr" mv.tip.autobrr;
+        package = self.lib.withMainProgram "autobrr" mv.latest.autobrr;
         secretFile = config.sops.secrets.autobrr_session.path;
         settings = {
           host = "0.0.0.0";

@@ -9,7 +9,7 @@
     }:
     let
       inherit (config.me.services.llama) port;
-      pkg = mv.tip.llama-cpp-vulkan;
+      pkg = mv.latest.llama-cpp-vulkan;
       backPort = 8089;
 
       brave-search-mcp = pkgs.buildNpmPackage rec {
@@ -160,7 +160,12 @@
       packages = [ pkg ];
 
       persist.directories = [
-        "/var/lib/private/llama-server"
+        {
+          directory = "/var/lib/private/llama-server";
+          user = "nobody";
+          group = "nogroup";
+          mode = "0755";
+        }
         {
           directory = "/var/lib/nginx";
           user = "nginx";

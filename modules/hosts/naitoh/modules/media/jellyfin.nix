@@ -63,7 +63,7 @@
 
           jellyfinWeb = pkgs.runCommand "jellyfin-web-abyss" { } ''
             mkdir -p "$out/share"
-            cp -a ${mv.tip.jellyfin-web.out}/share/jellyfin-web "$out/share/"
+            cp -a ${mv.latest.jellyfin-web.out}/share/jellyfin-web "$out/share/"
 
             webDir="$out/share/jellyfin-web"
             chmod -R u+w "$webDir"
@@ -91,7 +91,7 @@
               ''
                 mkdir -p "$out/bin"
 
-                cp ${mv.tip.jellyfin.out}/bin/jellyfin "$out/bin/jellyfin"
+                cp ${mv.latest.jellyfin.out}/bin/jellyfin "$out/bin/jellyfin"
                 chmod u+w "$out/bin/jellyfin"
 
                 if ! grep -q -- '--webdir=' "$out/bin/jellyfin"; then

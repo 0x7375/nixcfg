@@ -9,7 +9,7 @@
 
       services.bazarr = {
         enable = true;
-        package = mv.tip.bazarr;
+        package = mv.latest.bazarr;
         openFirewall = true;
         group = config.me.mediaGroup;
         dataDir = "/data/main/.state/bazarr";

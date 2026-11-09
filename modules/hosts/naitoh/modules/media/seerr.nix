@@ -22,7 +22,7 @@
 
       nixflix.seerr = {
         enable = true;
-        package = self.lib.withMainProgram "seerr" mv.tip.seerr;
+        package = self.lib.withMainProgram "seerr" mv.latest.seerr;
         openFirewall = true;
         apiKey._secret = config.sops.secrets."seerr/api_key".path;
       };

@@ -4,7 +4,7 @@
   flake.modules.darwin.homeVpn =
     { mv, ... }:
     {
-      packages = [ mv.tip.tailscale-gui ];
+      packages = [ mv.latest.tailscale-gui ];
     };
 
   flake.modules.nixos.homeVpn =
@@ -26,7 +26,7 @@
 
       services.tailscale = {
         enable = true;
-        package = self.lib.withMainProgram "tailscale" mv.tip.tailscale;
+        package = self.lib.withMainProgram "tailscale" mv.latest.tailscale;
         extraUpFlags = [
           "--operator=${user}"
         ];
