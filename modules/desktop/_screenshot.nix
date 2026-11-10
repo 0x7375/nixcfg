@@ -34,7 +34,7 @@ pkgs.writeShellApplication {
       case "$1" in
         area)
           clients=$(mmsg get all-clients | jq -r '.clients[] | select(.is_visible) | (if .is_fullscreen then 0 else ${toString border_px} end) as $b | "\(.x + $b),\(.y + $b) \(.width - 2*$b)x\(.height - 2*$b)"')
-          geom=$(echo "$clients" | slurp)
+          geom=$(echo "$clients" | slurp -b '#00000099' -B '#00000060')
           [[ -z "$geom" ]] && exit 1
           
           grim -g "$geom" "$filepath"
