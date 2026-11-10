@@ -1,5 +1,3 @@
-{ inputs, ... }:
-
 {
   flake.modules.nixos.desktop =
     {
@@ -13,6 +11,7 @@
         persistUser.directories = [
           ".config/pulse"
           ".local/state/wireplumber"
+          ".config/Meiro"
         ];
 
         me.desktop.bindings =
@@ -37,6 +36,7 @@
           pavucontrol
 
           pamixer
+          (callPackage ./_meiro.nix { })
         ];
 
         services.udev.extraRules = # bash
