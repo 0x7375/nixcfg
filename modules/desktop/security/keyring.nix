@@ -13,8 +13,14 @@
       ];
 
       persistUser.directories = [
-        ".gnupg"
-        ".password-store"
+        {
+          directory = ".gnupg";
+          mode = "0700";
+        }
+        {
+          directory = ".password-store";
+          mode = "0700";
+        }
       ];
 
       services.passSecretService = {
@@ -31,8 +37,22 @@
       userActivation =
         # bash
         ''
-          if ! ${lib.getExe pkgs.gnupg} --list-secret-keys "secrets@localhost" &>/dev/null; then
-            ${lib.getExe pkgs.gnupg} --batch --gen-key <<EOF
+          set -euo pipefail
+
+          export GNUPGHOME="$HOME/.gnupg"
+          export PASSWORD_STORE_DIR="$HOME/.password-store"
+
+          GPG="${lib.getExe pkgs.gnupg}"
+          PASS="${lib.getExe pkgs.pass}"
+          AWK="${lib.getExe pkgs.gawk}"
+          RECIPIENT="secrets@localhost"
+
+          mkdir -p "$GNUPGHOME" "$PASSWORD_STORE_DIR"
+          chmod 700 "$GNUPGHOME" "$PASSWORD_STORE_DIR"
+
+          # Create an unprotected key if it doesn't exist.
+          if ! "$GPG" --list-secret-keys "$RECIPIENT" &>/dev/null; then
+            "$GPG" --batch --gen-key <<EOF
           %no-protection
           Key-Type: EdDSA
           Key-Curve: ed25519
@@ -43,7 +63,32 @@
           Expire-Date: 0
           %commit
           EOF
-            ${lib.getExe pkgs.pass} init "secrets@localhost"
+          fi
+
+          # Retrieve the primary key fingerprint.
+          KEY_FINGERPRINT="$("$GPG" --with-colons --list-secret-keys "$RECIPIENT" |
+            "$AWK" -F: '$1 == "fpr" { print $10; exit }')"
+
+          if [ -z "$KEY_FINGERPRINT" ]; then
+            echo "Failed to retrieve GPG key fingerprint." >&2
+            exit 1
+          fi
+
+          # Ensure an encryption-capable secret subkey exists.
+          if ! "$GPG" --with-colons --list-secret-keys "$KEY_FINGERPRINT" |
+            "$AWK" -F: '$1 == "ssb" && $12 ~ /e/ { found = 1 } END { exit !found }'
+          then
+            echo "Adding missing encryption subkey..."
+
+            "$GPG" --batch \
+              --pinentry-mode loopback \
+              --passphrase "" \
+              --quick-add-key "$KEY_FINGERPRINT" cv25519 encr never
+          fi
+
+          # Initialize the password store if necessary.
+          if [ ! -f "$PASSWORD_STORE_DIR/.gpg-id" ]; then
+            "$PASS" init "$RECIPIENT"
           fi
         '';
     };

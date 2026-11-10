@@ -2,16 +2,16 @@
 
 pkgs.rustPlatform.buildRustPackage rec {
   pname = "pass-secret-service";
-  version = "0.6.0";
+  version = "0.7.1";
 
   src = pkgs.fetchFromGitHub {
     owner = "grimsteel";
     repo = "pass-secret-service";
     tag = "v${version}";
-    hash = "sha256-EThnD2vqrUhyFaSEkwNY5SarL3RQb95eA3joIN2KkAY=";
+    hash = "sha256-K98T+YH58GkZQJEvkT9ciEIGYOv5oCxOhatdZXxOqvU=";
   };
 
-  cargoHash = "sha256-VLXPwDf2WRnCYEr3VeZFrJR29rrKIbBXEA7e14CUkdw=";
+  cargoHash = "sha256-PIhTigOrqwzdxQ4zmbgjc5caLH8GXHRl89Se1N1Jjnw=";
 
   postInstall = ''
     install -Dm644 systemd/org.freedesktop.secrets.service \

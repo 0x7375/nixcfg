@@ -50,8 +50,6 @@
         XDG_CACHE_HOME = "$HOME/.cache";
         PATH = [ "${XDG_BIN_HOME}" ];
         RANDFILE = "${XDG_STATE_HOME}/rnd";
-        PASSWORD_STORE_DIR = "${XDG_DATA_HOME}/pass";
-        GNUPGHOME = "${XDG_DATA_HOME}/gnupg";
         HISTFILE = "${XDG_STATE_HOME}/bash/history";
         PYTHON_HISTORY = "${XDG_STATE_HOME}/python_history";
         GOPATH = "${XDG_DATA_HOME}/go";
