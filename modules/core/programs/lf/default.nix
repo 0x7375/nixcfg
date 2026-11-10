@@ -339,7 +339,7 @@
           cmd show-size :set sortby size; set info size; set reverse
 
           map ts show-size
-          map tt :set sortby time; set info time; set noreverse
+          map tt :set sortby time; set info time; set reverse
           map u unselect
           map v toggle
 
