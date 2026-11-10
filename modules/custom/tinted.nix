@@ -7,7 +7,58 @@
     }:
     let
       cfg = config.tinted;
-      palette = theme: stripHash: if stripHash then cfg.hex.${theme} else cfg.colors.${theme};
+      modes = [
+        "dark"
+        "light"
+      ];
+
+      palette = mode: stripHash: if stripHash then cfg.hex.${mode} else cfg.colors.${mode};
+
+      deepMerge =
+        a: b:
+        if lib.isAttrs a && lib.isAttrs b then
+          lib.zipAttrsWith
+            (_: values: builtins.foldl' deepMerge (builtins.head values) (builtins.tail values))
+            [
+              a
+              b
+            ]
+        else if lib.isList a && lib.isList b then
+          a ++ b
+        else
+          b;
+
+      mergeAttrs = builtins.foldl' deepMerge { };
+
+      mergeable =
+        {
+          name,
+          check,
+          merge,
+        }:
+        lib.types.mkOptionType {
+          inherit name;
+          description = "palette -> ${name}, or plain ${name}";
+          check = v: lib.isFunction v || check v;
+          merge =
+            _loc: defs:
+            let
+              values = map (d: d.value) defs;
+            in
+            if lib.any lib.isFunction values then
+              mode: merge (map (v: if lib.isFunction v then v mode else v) values)
+            else
+              merge values;
+        };
+
+      staticAttrs = lib.types.mkOptionType {
+        name = "staticAttrs";
+        description = "recursively merged attribute sets";
+        check = lib.isAttrs;
+        merge = _loc: defs: mergeAttrs (map (d: d.value) defs);
+      };
+
+      applyPalette = value: p: if lib.isFunction value then value p else value;
 
       mkThemeFile =
         fileCfg: themePalette:
@@ -15,17 +66,23 @@
           base =
             if fileCfg.generator != null then
               {
-                value = if fileCfg.value != null then fileCfg.value themePalette else themePalette;
+                value = deepMerge fileCfg.static (
+                  if fileCfg.themed != null then applyPalette fileCfg.themed themePalette else { }
+                );
+
                 inherit (fileCfg) generator;
               }
             else if fileCfg.source != null then
-              { source = fileCfg.source themePalette; }
+              { source = applyPalette fileCfg.source themePalette; }
             else if fileCfg.text != null then
-              { text = fileCfg.text themePalette; }
+              { text = applyPalette fileCfg.text themePalette; }
             else
-              throw "must specify one of text, source, or generator";
+              throw "tinted: must specify one of text, source, or generator";
         in
-        base // lib.optionalAttrs fileCfg.executable { executable = true; };
+        base
+        // lib.optionalAttrs fileCfg.executable {
+          executable = true;
+        };
     in
     {
       options.tinted = {
@@ -37,16 +94,10 @@
           description = "Per-color palette entries. Values should include the # symbol.";
         };
 
-        _themes = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          internal = true;
-          default = lib.unique (lib.concatMap lib.attrNames (lib.attrValues cfg.palette));
-        };
-
         colors = lib.mkOption {
           type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
           internal = true;
-          default = lib.genAttrs cfg._themes (theme: lib.mapAttrs (_: v: v.${theme}) cfg.palette);
+          default = lib.genAttrs modes (mode: lib.mapAttrs (_: v: v.${mode}) cfg.palette);
         };
 
         hex = lib.mkOption {
@@ -69,103 +120,72 @@
           default = ".local/state/tinted";
         };
 
-        defaultTheme = lib.mkOption {
-          type = lib.types.str;
-          default = builtins.head cfg._themes;
-        };
+        files = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                executable = lib.mkEnableOption "";
 
-        files =
-          let
-            inherit (lib) types;
-
-            mergeable =
-              {
-                name,
-                check,
-                merge,
-              }:
-              types.mkOptionType {
-                inherit name;
-                description = "palette -> ${name}, or plain ${name}";
-                check = v: lib.isFunction v || check v;
-                merge =
-                  _loc: defs:
-                  let
-                    fns = map (d: if lib.isFunction d.value then d.value else _: d.value) defs;
-                  in
-                  palette: merge (map (f: f palette) fns);
-              };
-          in
-          lib.mkOption {
-            type = types.attrsOf (
-              types.submodule {
-                options = {
-                  executable = lib.mkEnableOption "";
-                  text = lib.mkOption {
-                    type = types.nullOr (mergeable {
-                      name = "string";
-                      check = lib.isString;
-                      merge = lib.concatStrings;
-                    });
-                    default = null;
-                  };
-                  source = lib.mkOption {
-                    type = types.nullOr (types.functionTo types.path);
-                    default = null;
-                  };
-                  generator = lib.mkOption {
-                    type = types.nullOr (types.functionTo (types.either types.str types.path));
-                    default = null;
-                  };
-                  value = lib.mkOption {
-                    type = types.nullOr (mergeable {
-                      name = "attrs";
-                      check = lib.isAttrs;
-                      merge =
-                        let
-                          deepMerge =
-                            a: b:
-                            if lib.isAttrs a && lib.isAttrs b then
-                              lib.zipAttrsWith (_: v: builtins.foldl' deepMerge (builtins.head v) (builtins.tail v)) [
-                                a
-                                b
-                              ]
-                            else if lib.isList a && lib.isList b then
-                              a ++ b
-                            else
-                              b;
-                        in
-                        builtins.foldl' deepMerge { };
-                    });
-                    default = null;
-                  };
-                  stripHash = lib.mkOption {
-                    type = types.bool;
-                    default = false;
-                  };
+                text = lib.mkOption {
+                  type = lib.types.nullOr (mergeable {
+                    name = "string";
+                    check = lib.isString;
+                    merge = lib.concatStrings;
+                  });
+                  default = null;
                 };
-              }
-            );
-            default = { };
-            example = lib.literalExpression ''
-              {
-                ".Xresources".text = palette: '''
-                  *bg0: ''${palette.red}
-                  *red: ''${palette.red}
-                ''';
-              }
-            '';
-          };
+
+                source = lib.mkOption {
+                  type = lib.types.nullOr (lib.types.functionTo lib.types.path);
+                  default = null;
+                };
+
+                generator = lib.mkOption {
+                  type = lib.types.nullOr (lib.types.functionTo (lib.types.either lib.types.str lib.types.path));
+                  default = null;
+                };
+
+                themed = lib.mkOption {
+                  type = lib.types.nullOr (mergeable {
+                    name = "attrs";
+                    check = lib.isAttrs;
+                    merge = mergeAttrs;
+                  });
+                  default = null;
+                };
+
+                static = lib.mkOption {
+                  type = staticAttrs;
+                  default = { };
+                };
+
+                stripHash = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                };
+              };
+            }
+          );
+          default = { };
+          example = lib.literalExpression ''
+            {
+              ".Xresources".text = palette: '''
+                *bg0: ''${palette.red}
+                *red: ''${palette.red}
+              ''';
+            }
+          '';
+        };
 
         _activations = lib.mkOption {
           type = lib.types.attrsOf lib.types.attrs;
           internal = true;
           default = lib.mapAttrs (targetPath: _: {
             dirs = [
-              (builtins.dirOf "${cfg.homeDir}/${targetPath}")
-              (builtins.dirOf "${cfg.homeDir}/${cfg.stateDir}/${targetPath}")
+              (dirOf "${cfg.homeDir}/${targetPath}")
+              (dirOf "${cfg.homeDir}/${cfg.stateDir}/${targetPath}")
             ];
-            source = "${cfg.homeDir}/${cfg.stateDir}/${targetPath}-${cfg.defaultTheme}";
+            source = "${cfg.homeDir}/${cfg.stateDir}/${targetPath}-dark";
             target = "${cfg.homeDir}/${targetPath}";
           }) cfg.files;
         };
@@ -177,14 +197,35 @@
             assertion = cfg.palette != { };
             message = "tinted: palette is empty";
           }
+          {
+            assertion = lib.all (variants: lib.attrNames variants == modes) (lib.attrValues cfg.palette);
+            message = "tinted: every color must define exactly dark and light values";
+          }
+          {
+            assertion = lib.all (
+              file:
+              lib.count (x: x != null) [
+                file.text
+                file.source
+                file.generator
+              ] == 1
+            ) (lib.attrValues cfg.files);
+            message = "tinted: each file must specify exactly one of text, source, or generator";
+          }
+          {
+            assertion = lib.all (file: (file.static == { } && file.themed == null) || file.generator != null) (
+              lib.attrValues cfg.files
+            );
+            message = "tinted: static and themed values require a generator";
+          }
         ];
 
         hj.files = lib.concatMapAttrs (
           targetPath: fileCfg:
           lib.mergeAttrsList (
-            map (theme: {
-              "${cfg.stateDir}/${targetPath}-${theme}" = mkThemeFile fileCfg (palette theme fileCfg.stripHash);
-            }) cfg._themes
+            map (mode: {
+              "${cfg.stateDir}/${targetPath}-${mode}" = mkThemeFile fileCfg (palette mode fileCfg.stripHash);
+            }) modes
           )
         ) cfg.files;
       };
@@ -203,7 +244,7 @@
     { config, lib, ... }:
     {
       activation = lib.concatMapStringsSep "\n" (v: ''
-          ${lib.concatMapStringsSep "\n" (d: "mkdir -p ${d}") v.dirs}
+        ${lib.concatMapStringsSep "\n" (d: "mkdir -p ${d}") v.dirs}
         ln -s ${v.source} ${v.target} 2> /dev/null || true
         chown -h ${config.me.user} ${v.target}
       '') (lib.attrValues config.tinted._activations);

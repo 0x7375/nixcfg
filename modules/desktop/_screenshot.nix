@@ -12,8 +12,7 @@ pkgs.writeShellApplication {
   ];
   text =
     let
-      # TODO: make this shit better
-      inherit (config.tinted.files.".config/mango/config.conf".value config.tinted.hex.dark) border_px;
+      inherit (config.tinted.files.".config/mango/config.conf".static) border_px;
     in
     # bash
     ''

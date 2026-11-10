@@ -36,11 +36,11 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIODU2bMHmJQugnGaQQzfeuEsc0BN1p1C4M9nCoxJw0nu root@woz"
     ];
 
-    tinted.files.".config/mango/config.conf".value.mouse_accel_profile = "1";
+    tinted.files.".config/mango/config.conf".static.mouse_accel_profile = "1";
 
     time.hardwareClockInLocalTime = true;
 
-    tinted.files.".config/mango/config.conf".value.exec_once = [
+    tinted.files.".config/mango/config.conf".static.exec_once = [
       "mmsg dispatch viewcrossmon,5,HDMI-A-1 && mmsg dispatch viewcrossmon,1,HDMI-A-2"
     ];
 

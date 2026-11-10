@@ -18,8 +18,7 @@ pkgs.writeShellApplication {
   text =
     let
       inherit (pkgs.lib) getExe;
-      # TODO: make this shit better
-      inherit (config.tinted.files.".config/mango/config.conf".value config.tinted.hex.dark) border_px;
+      inherit (config.tinted.files.".config/mango/config.conf".static) border_px;
     in
     # bash
     ''

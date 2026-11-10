@@ -472,7 +472,7 @@
   flake.modules.nixos.desktop =
     { lib, pkgs, ... }:
     {
-      tinted.files.".config/mango/config.conf".value = {
+      tinted.files.".config/mango/config.conf".static = {
         bind = [
           "SUPER,e,toggle_named_scratchpad,foot-lf,none,footclient --app-id foot-lf -e ${lib.getExe pkgs.lf}"
         ];

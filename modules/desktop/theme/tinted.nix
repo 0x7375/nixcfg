@@ -233,7 +233,7 @@
               in
               {
                 generator = lib.generators.toJSON { };
-                value = {
+                themed = {
                   light = mkMeiroScheme "light" config.tinted.colors.light;
                   dark = mkMeiroScheme "dark" config.tinted.colors.dark;
                 };

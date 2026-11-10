@@ -166,7 +166,16 @@
           {
             stripHash = true;
             generator = lib.generators.toKeyValue { mkKeyValue = mkMangoKeyValue; };
-            value = p: {
+            themed = p: {
+              border_color = "0x${p.bg1}ff";
+              focus_color = "0x${p.fg2}ff";
+              global_color = "0x${p.fg3}ff";
+              urgent_color = "0x${p.red}ff";
+              scratchpad_color = "0x${p.blue}ff";
+              root_color = "0x${p.bg0}ff";
+              overlay_color = "0x${p.bg1}ff";
+            };
+            static = {
               numlock_on = 1;
               repeat_rate = 30;
               repeat_delay = 200;
@@ -199,13 +208,6 @@
               gap_outer_horizontal = 0;
               gap_outer_vertical = 0;
               border_radius = 0;
-              border_color = "0x${p.bg1}ff";
-              focus_color = "0x${p.fg2}ff";
-              global_color = "0x${p.fg3}ff";
-              urgent_color = "0x${p.red}ff";
-              scratchpad_color = "0x${p.blue}ff";
-              root_color = "0x${p.bg0}ff";
-              overlay_color = "0x${p.bg1}ff";
 
               blur = 0;
               shadows = 0;
@@ -304,7 +306,7 @@
     };
 
   flake.modules.nixos.laptop = {
-    tinted.files.".config/mango/config.conf".value = {
+    tinted.files.".config/mango/config.conf".static = {
       trackpad_scroll_factor = 0.3;
       switchbind = [
         "fold,spawn,noctalia msg session lock-and-suspend"

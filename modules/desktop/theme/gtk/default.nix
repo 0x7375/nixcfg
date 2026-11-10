@@ -69,10 +69,30 @@
             package = pkgs.adw-gtk3;
           };
 
-          iconTheme = mkThemeOption {
-            name = "Gruvbox-Plus";
-            package = pkgs.gruvbox-plus-icons;
-          };
+          # iconTheme = mkThemeOption {
+          #   name = "Gruvbox-Plus";
+          #   package = pkgs.gruvbox-plus-icons;
+          # };
+
+          iconTheme =
+            let
+              colloidIconTheme =
+                (pkgs.colloid-icon-theme.override {
+                  schemeVariants = [ ];
+                  colorVariants = [ ];
+                }).overrideAttrs
+                  (old: {
+                    postPatch = (old.postPatch or "") + ''
+                      substituteInPlace install.sh \
+                        --replace-fail "theme_color='#5b9bf8'" \
+                                      "theme_color='#${config.tinted.hex.dark.neutral_blue}'"
+                    '';
+                  });
+            in
+            mkThemeOption {
+              name = "Colloid";
+              package = colloidIconTheme;
+            };
 
           cursorTheme =
             mkThemeOption {
