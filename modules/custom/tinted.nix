@@ -71,11 +71,11 @@
           base =
             if fileCfg.generator != null then
               {
-                value = deepMerge themePalette (
-                  deepMerge fileCfg.static (
-                    if fileCfg.themed != null then applyPalette fileCfg.themed themePalette else { }
-                  )
-                );
+                value =
+                  if fileCfg.themed != null then
+                    deepMerge fileCfg.static (applyPalette fileCfg.themed themePalette)
+                  else
+                    deepMerge themePalette fileCfg.static;
 
                 inherit (fileCfg) generator;
               }
