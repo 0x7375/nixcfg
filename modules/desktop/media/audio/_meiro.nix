@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   appimageTools,
   fetchurl,
 }:
@@ -8,9 +9,25 @@ let
   pname = "meiro";
   version = "0.6.1";
 
+  platforms = {
+    "x86_64-linux" = {
+      arch = "amd64";
+      hash = "sha256-2R1WZAWwe0vTiI1GgqGRNHioVHHhNKaPjsYLA00c8BU=";
+    };
+
+    "aarch64-linux" = {
+      arch = "arm64";
+      hash = "sha256-2FiPVO8GC8njO1oMlN6AEm0kLp+eCfoy/ybYYBjR5oU=";
+    };
+  };
+
+  target =
+    platforms.${stdenv.hostPlatform.system}
+      or (throw "Unsupported platform: ${stdenv.hostPlatform.system}");
+
   src = fetchurl {
-    url = "https://github.com/elianiva/meiro/releases/download/desktop-v${version}/Meiro-${version}-linux-amd64.AppImage";
-    hash = "sha256-2R1WZAWwe0vTiI1GgqGRNHioVHHhNKaPjsYLA00c8BU=";
+    url = "https://github.com/elianiva/meiro/releases/download/desktop-v${version}/Meiro-${version}-linux-${target.arch}.AppImage";
+    inherit (target) hash;
   };
 
   appimageContents = appimageTools.extract {
@@ -87,7 +104,7 @@ appimageTools.wrapType2 {
     description = "Lightweight YouTube Music desktop client";
     homepage = "https://github.com/elianiva/meiro";
     license = lib.licenses.gpl3Only;
-    platforms = [ "x86_64-linux" ];
+    platforms = builtins.attrNames platforms;
     mainProgram = pname;
     sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
   };
