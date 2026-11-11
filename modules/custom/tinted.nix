@@ -12,7 +12,12 @@
         "light"
       ];
 
-      palette = mode: stripHash: if stripHash then cfg.hex.${mode} else cfg.colors.${mode};
+      palette =
+        mode: stripHash:
+        (if stripHash then cfg.hex.${mode} else cfg.colors.${mode})
+        // {
+          _theme = mode;
+        };
 
       deepMerge =
         a: b:
