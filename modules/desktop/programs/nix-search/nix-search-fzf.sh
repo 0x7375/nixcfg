@@ -19,7 +19,7 @@ echo "" >"$STATE_FILE"
 _search_snippet() {
     local match
     match=$(echo "$1" | tr -d "'" | awk '{ if ($2) { print $2 } else print $1 }')
-    "$OPENER" "https://github.com/search?type=code&q=lang:nix+$match"
+    "$OPENER" "https://github.com/search?type=code&q=lang:nix+$match" >/dev/null 2>&1 </dev/null
 }
 export -f _search_snippet
 
@@ -43,7 +43,7 @@ export -f _nix_profile
 _open_source() {
     local url
     url=$($CMD source $(cat "$STATE_FILE") "$1" | sed 's|nixos/modules/nixos/modules/|nixos/modules/|g')
-    "$OPENER" "$url"
+    "$OPENER" "$url" >/dev/null 2>&1 </dev/null
 }
 export -f _open_source
 
@@ -91,10 +91,10 @@ exec "$CMD" print | fzf \
     --preview "$CMD preview \$(cat $STATE_FILE) {}" \
     --bind "ctrl-u:preview-up" \
     --bind "ctrl-d:preview-down" \
-    --bind "$OPEN_SOURCE_KEY:execute(_open_source {})" \
+    --bind "$OPEN_SOURCE_KEY:execute-silent(_open_source {})" \
     --bind "$EDIT_SOURCE_KEY:execute(_edit_source {})" \
-    --bind "$OPEN_HOMEPAGE_KEY:execute($CMD homepage \$(cat $STATE_FILE) {} | xargs $OPENER)" \
-    --bind "$SEARCH_SNIPPET_KEY:execute(_search_snippet {})" \
+    --bind "$OPEN_HOMEPAGE_KEY:execute-silent($CMD homepage \$(cat $STATE_FILE) {} | xargs $OPENER >/dev/null 2>&1)" \
+    --bind "$SEARCH_SNIPPET_KEY:execute-silent(_search_snippet {})" \
     --bind "$NIX_SHELL_KEY:become(_nix_shell {})" \
     --bind "$NIX_PROFILE_KEY:execute(_nix_profile {})" \
     --bind "$PRINT_PREVIEW_KEY:execute($CMD preview \$(cat $STATE_FILE) {} | less)" \

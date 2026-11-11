@@ -24,8 +24,8 @@
             src = pkgs.fetchFromGitHub {
               owner = "0x7375";
               repo = "nix-search-tv";
-              rev = "627e9bc7cf8519188c3a9ca810b36a4d5e2e2de1";
-              hash = "sha256-S9WXFwEcs6C5go8oOaXDI81I3HaTBBf71kjYSd2Fw2Y=";
+              rev = "439e6c1a2bf598d892ab1364e96a462d8ed4b554";
+              hash = "sha256-1HFhLBX5SMi4HcRLK/zXocZ+lcCpHWEeeczQ8fUYGgA=";
             };
           };
         })
