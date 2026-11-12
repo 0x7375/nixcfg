@@ -90,7 +90,7 @@ url = "gh:manic-systems/npr"
 url = "cb:0x7E/nd"
 
 [inputs.graine]
-url = "cb:0x7E/graine"
+url = "codeberg:0x7E/graine"
 
 [inputs.karabiner-ts]
 url = "cb:0x7E/karabiner-ts"

@@ -15,7 +15,7 @@
         url = "http://localhost:${toString config.nixflix.torrentClients.qbittorrent.webuiPort}";
         disk_path = "/data/shared";
         high_watermark = 0.85;
-        low_watermark = 0.80;
+        low_watermark = 0.82;
 
         trackers = [
           {
@@ -41,21 +41,12 @@
           }
         ];
 
-        pools = [
-          {
-            name = "autobrr";
-            categories = [ "autobrr" ];
-            capacity_gib = 200;
-            grace_days = 7;
-          }
-          {
-            name = "arr";
-            categories = [
-              "sonarr"
-              "radarr"
-            ];
-            grace_days = 14;
-          }
+        grace_days = 7;
+
+        managed_categories = [
+          "autobrr"
+          "sonarr"
+          "radarr"
         ];
       };
     in

@@ -41,11 +41,11 @@
   },
   "graine": {
     "type": "git",
-    "url": "https://codeberg.org/0x7E/graine",
+    "url": "ssh://git@codeberg.org/0x7E/graine",
     "ref": "HEAD",
-    "rev": "84dff03d5cd87a145eaf702c6266988676714a31",
-    "narHash": "sha256-jYb9MMXCAIxbAi3RaEOafzVmCV1GCHlcV1Ta97HE3Vs=",
-    "lastModified": 1794245933
+    "rev": "74e4e76dfbdcc0d17b86d85264778fe0a5bb0461",
+    "narHash": "sha256-69mdvwfJjGiROnauwnLMwhnNfMATrcB/0JAWOn7KGzI=",
+    "lastModified": 1794442435
   },
   "helium": {
     "type": "github",
