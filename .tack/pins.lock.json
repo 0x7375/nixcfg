@@ -91,9 +91,9 @@
     "type": "github",
     "owner": "fzakaria",
     "repo": "nixpkgs-multiverse",
-    "rev": "4891ee890d8f0ab032f518504850ac29d89e209d",
-    "narHash": "sha256-mSX5eQhinUK67omMfDMyg3BwwzZG44L8scF3AY+hSd0=",
-    "lastModified": 1794464137
+    "rev": "e2b782894c4f074db679f786fb02139d8e8d7681",
+    "narHash": "sha256-GQTBW9aAw0ABejXCywUN0eA6lHrmjxYWT8yaULfKAQ4=",
+    "lastModified": 1794496271
   },
   "nd": {
     "type": "git",
@@ -219,8 +219,8 @@
     "type": "github",
     "owner": "youwen5",
     "repo": "zen-browser-flake",
-    "rev": "590d492da41cab84758361ef15d504c966f35474",
-    "narHash": "sha256-soIwkenBdT+xSXv9iARxkGuyrq4/kF1u2vXK811LFUM=",
-    "lastModified": 1794048739
+    "rev": "ddf9a4d974a43fdc32db8f766a137093d6822ff5",
+    "narHash": "sha256-eLUmhmHQJg9DUKtYMfdyK1v6ktkc7ikbGsYvEwyw3y0=",
+    "lastModified": 1794485312
   }
 }
