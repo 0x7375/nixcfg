@@ -27,6 +27,11 @@
       sops.secrets.uni_username.owner = config.me.user;
       sops.secrets.uni_pw.owner = config.me.user;
 
+      # sops only places files during activation
+      persistUser.directories = [
+        ".config/aerc"
+      ];
+
       sops.templates."aerc-accounts.conf" = {
         owner = config.me.user;
         path = "${config.me.home}/.config/aerc/accounts.conf";
