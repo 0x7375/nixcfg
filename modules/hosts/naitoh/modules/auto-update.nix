@@ -118,8 +118,8 @@
       systemd.timers.flake-update = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnBootSec = "15m";
-          OnUnitActiveSec = "6h";
+          OnCalendar = "daily";
+          Persistent = true;
         };
       };
     };
