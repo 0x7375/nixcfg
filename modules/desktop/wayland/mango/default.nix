@@ -6,6 +6,7 @@
       pkgs,
       config,
       lib,
+      mv,
       ...
     }:
     let
@@ -70,6 +71,8 @@
             mango = inputs.mango.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (old: {
               patches = [ ./fix_monocle_cross_monitor_focus.patch ];
             });
+
+            xdg-desktop-portal-wlr = mv.version "xdg-desktop-portal-wlr" "0.8.5";
           })
         ];
 
@@ -107,7 +110,13 @@
         ];
 
         xdg.portal = {
-          wlr.enable = true;
+          wlr = {
+            enable = true;
+            settings.screencast = {
+              chooser_type = "simple";
+              chooser_cmd = "${lib.getExe pkgs.slurp} -f 'Monitor: %o' -or";
+            };
+          };
           extraPortals = with pkgs; [
             xdg-desktop-portal-gtk
             xdg-desktop-portal-wlr
