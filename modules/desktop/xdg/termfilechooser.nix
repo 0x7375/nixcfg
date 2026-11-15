@@ -65,7 +65,7 @@
         ''
           [filechooser]
           env=PATH='${env}/bin'
-          env=TERMCMD='${lib.getExe pkgs.${terminal.name}} -T filechooser -e'
+          env=TERMCMD='${terminal.executable} -T filechooser -e'
           cmd='${pkgs.xdg-desktop-portal-termfilechooser}/share/xdg-desktop-portal-termfilechooser/lf-wrapper.sh'
           default_dir=$XDG_DOWNLOAD_DIR
         '';

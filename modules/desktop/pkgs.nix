@@ -16,10 +16,7 @@
     { lib, pkgs, ... }:
     lib.mkMerge [
       {
-        # unfree-packages = [ "omnissa-horizon-client" ];
-
         packages = with pkgs; [
-          # omnissa-horizon-client
           signal-desktop
           qbittorrent
           # jetbrains.idea-community
