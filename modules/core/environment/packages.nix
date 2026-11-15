@@ -24,6 +24,7 @@
         inputs.npr.packages.${pkgs.stdenv.hostPlatform.system}.default
         my.nlink
         my.dump-dotfiles
+        my.cuckcoding
         dix
       ];
     };
