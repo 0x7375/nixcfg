@@ -171,6 +171,20 @@
                 }
               ];
             };
+            "52-fifine-soft-mixer" = {
+              "monitor.alsa.rules" = [
+                {
+                  matches = [
+                    {
+                      "device.name" = "alsa_card.usb-MV-SILICON_fifine_Microphone_20190808-00";
+                    }
+                  ];
+                  actions.update-props = {
+                    "api.alsa.soft-mixer" = true;
+                  };
+                }
+              ];
+            };
           };
         };
       }
