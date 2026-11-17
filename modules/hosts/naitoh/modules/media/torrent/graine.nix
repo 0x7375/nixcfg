@@ -22,8 +22,8 @@
 
           imageFile = pkgs.dockerTools.pullImage {
             imageName = name;
-            imageDigest = "sha256:446da67f3080f10f4ea08735dc3cb12342ae6f8e437c33146628230707c53826";
-            sha256 = "sha256-/92zoCsYhq7J1HbX7QJlkffIEgzs6DaPLzmd8ids7X0=";
+            imageDigest = "sha256:7b7b66dd018295244a418ba00c4f04dced0d27fdd0c1edf59c1235b16e849730";
+            sha256 = "sha256-8rMXcv6sua1xsn/EA/L/tNmzWlNk9lTp540zKn0FTIc=";
 
             finalImageTag = version;
           };
