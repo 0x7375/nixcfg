@@ -1,6 +1,6 @@
 --!nonstrict
 -- Bitwarden service
--- Handles bw serve, status poll, unlock/lock/sync/copy/export/autotype.
+-- Handles bw serve, status poll, unlock/sync/lock/copy/export/autotype.
 
 noctalia.setUpdateInterval(500)
 
@@ -20,6 +20,8 @@ local serveStartCooldown = 0
 local nextSlowPollTick = 0
 local statusInFlight = false
 local opInFlight = false
+local syncInFlight = false
+local itemsRevision = noctalia.state.get("items_revision") or 0
 local lastStatusKey = ""
 local pendingClear = nil
 local weStartedServe = false
@@ -185,12 +187,13 @@ end
 local function pollCliStatus(serveErr)
   noctalia.runAsync("bw status", function(result)
     statusInFlight = false
+    if syncInFlight then return end
     applyCliStatusResult(result, serveErr)
   end, 10000)
 end
 
 local function pollStatus()
-  if statusInFlight then return end
+  if statusInFlight or syncInFlight then return end
   if not status.bwAvailable then
     setStatus({ serveUp = false, vault = "offline", error = "bw not found" })
     return
@@ -206,6 +209,10 @@ local function pollStatus()
 
   statusInFlight = true
   httpJson("GET", "/status", nil, function(data, err)
+    if syncInFlight then
+      statusInFlight = false
+      return
+    end
     if err ~= nil then
       nextSlowPollTick = tickCount + SLOW_POLL_TICKS
       pollCliStatus(err)
@@ -324,7 +331,7 @@ local function extractField(item, field)
   return nil
 end
 
-local function copyItemField(itemId, field)
+local function copyItemField(itemId, field, itemName)
   if type(itemId) ~= "string" or itemId == "" then return end
   if status.vault ~= "unlocked" then
     noctalia.notifyError("Bitwarden", "Vault Locked")
@@ -350,7 +357,9 @@ local function copyItemField(itemId, field)
         return
       end
       touchUnlockActivity()
-      copySecret(value)
+      if copySecret(value) and type(itemName) == "string" and itemName ~= "" then
+        noctalia.state.set("last_copied_item", { id = itemId, name = itemName })
+      end
     end)
   end
 
@@ -362,7 +371,9 @@ local function copyItemField(itemId, field)
       local value = if err == nil then parseSecretValue(data) else nil
       if value ~= nil then
         touchUnlockActivity()
-        copySecret(value)
+        if copySecret(value) and type(itemName) == "string" and itemName ~= "" then
+          noctalia.state.set("last_copied_item", { id = itemId, name = itemName })
+        end
         return
       end
       fetchFullItem()
@@ -427,6 +438,47 @@ local function curlPost(path, onDone)
   end, 20000)
 end
 
+local function openVaultLauncher(toggle)
+  local query = "/bw "
+  local lastCopied = noctalia.state.get("last_copied_item")
+  if type(lastCopied) == "table" and type(lastCopied.name) == "string" and lastCopied.name ~= "" then
+    query ..= lastCopied.name .. " "
+  end
+  noctalia.state.set("restore_last_item", true)
+  local command = if toggle then "panel-toggle" else "panel-open"
+  noctalia.runAsync(`noctalia msg {command} launcher {shellQuote(query)}`)
+end
+
+local function markItemsChanged()
+  itemsRevision += 1
+  noctalia.state.set("items_revision", itemsRevision)
+end
+
+local function syncVault(openLauncher, notifySuccess)
+  if opInFlight then return end
+  opInFlight = true
+  syncInFlight = true
+  -- Do not expose cached entries while refreshing them.
+  setStatus({ vault = "syncing", error = "" })
+  curlPost("/sync", function(ok, err)
+    syncInFlight = false
+    opInFlight = false
+    if ok then
+      markItemsChanged()
+      if notifySuccess then noctalia.notify("Bitwarden", "Vault Synced") end
+    else
+      noctalia.notifyError("Bitwarden", "Sync failed; showing local vault: " .. (err or "unknown error"))
+    end
+    if sessionUnlocked then touchUnlockActivity() end
+    setStatus({ serveUp = true, vault = "unlocked", error = if ok then "" else (err or "Sync failed") })
+    pollStatus()
+    if openLauncher then
+      noctalia.notify("Bitwarden", "Vault Unlocked")
+      openVaultLauncher(false)
+    end
+  end)
+end
+
 local function doUnlockCmd(openLauncher)
   if opInFlight then return end
 
@@ -462,13 +514,7 @@ local function doUnlockCmd(openLauncher)
       sessionUnlocked = true
       pendingQuietLock = false
       touchUnlockActivity()
-      setStatus({ serveUp = true, vault = "unlocked", error = "" })
-      noctalia.notify("Bitwarden", "Vault Unlocked")
-      pollStatus()
-
-      if openLauncher then
-        noctalia.runAsync('noctalia msg panel-open launcher "/bw "')
-      end
+      syncVault(openLauncher, false)
     end)
   end, 30000)
 end
@@ -490,63 +536,65 @@ local function doLock(quiet)
 end
 
 local function doSync()
-  if opInFlight then return end
-  opInFlight = true
-  curlPost("/sync", function(ok, err)
-    opInFlight = false
-    if not ok then
-      noctalia.notifyError("Bitwarden", err or "Sync failed")
-      return
-    end
-    if status.vault == "unlocked" then touchUnlockActivity() end
-    noctalia.notify("Bitwarden", "Vault Synced")
-    pollStatus()
-  end)
+  if status.vault ~= "unlocked" then return end
+  syncVault(false, true)
 end
 
 local function doExport()
-  if opInFlight then return end
-  if not status.bwAvailable then return end
+  if opInFlight or not status.bwAvailable then return end
 
   local decryptCmd = noctalia.getConfig("decrypt_cmd")
   local outPath = noctalia.getConfig("export_out_path")
-  local exportPipe = noctalia.getConfig("export_encrypt_cmd")
-
   if type(decryptCmd) ~= "string" or decryptCmd == "" then
     noctalia.notifyError("Bitwarden", "Decrypt command not configured in settings")
     return
   end
-
-  if type(exportPipe) ~= "string" or exportPipe == "" then
-    noctalia.notifyError("Bitwarden", "Export command not configured in settings")
+  if type(outPath) ~= "string" or outPath == "" then
+    noctalia.notifyError("Bitwarden", "Export path not configured in settings")
     return
   end
-  
+
+  local destination = shellQuote(outPath)
+  if outPath:sub(1, 2) == "~/" then
+    destination = '"$HOME"/' .. shellQuote(outPath:sub(3))
+  end
+
+  -- Never place the master password in the shell command arguments.
+  -- The configured decrypt command is executed by the shell and returns it via stdout.
+  local exportCmd = table.concat({
+    "set -eu",
+    "umask 077",
+    `out={destination}`,
+    'mkdir -p -- "$(dirname -- "$out")"',
+    'tmp=$(mktemp "${out}.tmp.XXXXXX")',
+    "trap 'rm -f -- \"$tmp\"' EXIT HUP INT TERM",
+    `BW_PASSWORD=$({decryptCmd})`,
+    'test -n "$BW_PASSWORD"',
+    "export BW_PASSWORD",
+    "BW_SESSION=$(bw unlock --raw --passwordenv BW_PASSWORD)",
+    "export BW_SESSION",
+    'bw --raw export --format json > "$tmp"',
+    'chmod 600 -- "$tmp"',
+    'mv -f -- "$tmp" "$out"',
+    "trap - EXIT HUP INT TERM",
+  }, "; ")
+
   opInFlight = true
-
-  noctalia.runAsync(decryptCmd, function(result)
-    local password = noctalia.string.trim(result.stdout or "")
-    local safePw = shellQuote(password)
-    
-    local exportCmd = `BW_PASSWORD={safePw} BW_SESSION=$(bw unlock --raw --passwordenv BW_PASSWORD) bw --raw export --format json | {exportPipe} > {outPath}`
-
-    noctalia.runAsync(exportCmd, function(expRes)
-      opInFlight = false
-      if type(expRes) ~= "table" or expRes.exitCode ~= 0 then
-        local errMsg = (expRes and expRes.stderr ~= "") and expRes.stderr or "CLI error"
-        noctalia.notifyError("Bitwarden", "Export failed: " .. errMsg)
-      else
-        noctalia.notify("Bitwarden", `Vault exported to {outPath}`)
-      end
-    end, 15000)
-  end, 30000)
+  noctalia.runAsync(exportCmd, function(expRes)
+    opInFlight = false
+    if type(expRes) ~= "table" or expRes.exitCode ~= 0 then
+      local errMsg = (type(expRes) == "table" and type(expRes.stderr) == "string" and expRes.stderr ~= "") and expRes.stderr or "CLI error"
+      noctalia.notifyError("Bitwarden", "Export failed: " .. errMsg)
+    else
+      noctalia.notify("Bitwarden", `Vault exported to {outPath}`)
+    end
+  end, 60000)
 end
-
 function onIpc(event, payload)
   if event == "toggle_menu" then
     if status.vault == "unlocked" then
-      noctalia.runAsync('noctalia msg panel-toggle launcher "/bw "')
-    else
+      openVaultLauncher(true)
+    elseif not syncInFlight then
       doUnlockCmd(true)
     end
   elseif event == "unlock_cmd" then
@@ -565,7 +613,7 @@ function onIpc(event, payload)
   elseif event == "copy" then
     local id = payload.id
     local field = payload.field or "password"
-    copyItemField(id, field)
+    copyItemField(id, field, payload.name)
   elseif event == "autotype" then
     local id = payload.id
     doAutotype(id)

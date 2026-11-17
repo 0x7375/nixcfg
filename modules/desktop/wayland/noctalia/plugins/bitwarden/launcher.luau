@@ -10,6 +10,15 @@ local nameIndex = {}
 
 local vaultItems = nil 
 local isFetching = false
+local fetchGeneration = 0
+
+local function invalidateItems()
+  fetchGeneration += 1
+  vaultItems = nil
+  itemsCache = {}
+  nameIndex = {}
+  isFetching = false
+end
 
 local function hint(id, title, subtitle, glyph, query)
   return { id = id or "", title = title, subtitle = subtitle, glyph = glyph or "lock", query = query }
@@ -24,7 +33,7 @@ local function actionRows()
   if vaultStatus == "unlocked" then
     table.insert(rows, hint("action:lock", "Lock Vault", "Lock the local Bitwarden session", "lock"))
     table.insert(rows, hint("action:sync", "Sync Vault", "Pull the latest changes from the server", "refresh"))
-    table.insert(rows, hint("action:export", "Export Vault", "Save encrypted JSON backup to disk", "download"))
+    table.insert(rows, hint("action:export", "Export Vault", "Save plaintext JSON backup to disk", "download"))
   elseif vaultStatus == "offline" then
     table.insert(rows, hint("action:serve", "Start Serve", "Start the local background Bitwarden API", "plug-connected"))
   end
@@ -33,9 +42,11 @@ end
 
 local function searchAndScore(rows, pattern, scoredTable)
   for _, row in ipairs(rows) do
-    local haystack = row.searchTerms or (row.title .. " " .. (row.subtitle or ""))
-    local score = noctalia.fuzzyScore(pattern, haystack)
-    if score ~= nil then
+    -- A title match always ranks before a match in secondary fields.
+    local titleScore = noctalia.fuzzyScore(pattern, row.title or "")
+    local secondaryScore = noctalia.fuzzyScore(pattern, row.searchTerms or row.subtitle or "")
+    if titleScore ~= nil or secondaryScore ~= nil then
+      local score = if titleScore ~= nil then 1000000 + titleScore else secondaryScore
       table.insert(scoredTable, { row = row, score = score })
     end
   end
@@ -109,7 +120,6 @@ end
 
 local function buildSearchTerms(item)
   local terms = {}
-  if type(item.name) == "string" and item.name ~= "" then table.insert(terms, item.name) end
   if type(item.notes) == "string" and item.notes ~= "" then table.insert(terms, item.notes) end
   
   if type(item.login) == "table" then
@@ -162,6 +172,18 @@ local function runQuery(query)
 
   local navItemId = nameIndex[text]
   local subQuery = ""
+
+  -- Prefer the precise item ID on re-opening, even if several items share a name.
+  local lastCopied = noctalia.state.get("last_copied_item")
+  if type(lastCopied) == "table" and type(lastCopied.id) == "string" and
+      type(lastCopied.name) == "string" and itemsCache[lastCopied.id] ~= nil then
+    if text == lastCopied.name then
+      navItemId = lastCopied.id
+    elseif text:sub(1, #lastCopied.name + 1) == lastCopied.name .. " " then
+      navItemId = lastCopied.id
+      subQuery = noctalia.string.trim(text:sub(#lastCopied.name + 2))
+    end
+  end
 
   if navItemId == nil then
     local bestMatchLen = 0
@@ -230,11 +252,13 @@ local function runQuery(query)
     if not isFetching then
       isFetching = true
       local url = `http://127.0.0.1:{SERVE_PORT}/list/object/items`
+      local requestGeneration = fetchGeneration
       noctalia.http({
         method = "GET",
         url = url,
         headers = { "Accept: application/json" },
       }, function(res)
+        if requestGeneration ~= fetchGeneration then return end
         isFetching = false
         if not res.ok then
           noctalia.state.set("command", { action = "ensure_serve" })
@@ -285,6 +309,27 @@ local function runQuery(query)
                 end
               end
             end
+
+            local lastCopied = noctalia.state.get("last_copied_item")
+            if type(lastCopied) == "table" and type(lastCopied.id) == "string" and
+                type(lastCopied.name) == "string" then
+              local currentItem = itemsCache[lastCopied.id]
+              if currentItem == nil then
+                -- The entry was removed on another device.
+                noctalia.state.set("last_copied_item", {})
+                if noctalia.string.trim(lastQuery) == lastCopied.name then
+                  launcher.setQuery("")
+                  return
+                end
+              elseif currentItem.name ~= lastCopied.name then
+                -- Follow renames without keeping a stale launcher query.
+                noctalia.state.set("last_copied_item", { id = lastCopied.id, name = currentItem.name })
+                if noctalia.string.trim(lastQuery) == lastCopied.name then
+                  launcher.setQuery(currentItem.name .. " ")
+                  return
+                end
+              end
+            end
           else
             vaultItems = nil
           end
@@ -330,8 +375,8 @@ local function applyStatus(st)
   if type(st) == "table" and type(st.vault) == "string" then
     nextStatus = st.vault
   end
-  if vaultStatus ~= "unlocked" and nextStatus == "unlocked" then
-    vaultItems = nil
+  if nextStatus ~= vaultStatus then
+    invalidateItems()
   end
   vaultStatus = nextStatus
   runQuery(lastQuery)
@@ -339,9 +384,24 @@ end
 
 applyStatus(noctalia.state.get("status"))
 noctalia.state.watch("status", applyStatus)
+noctalia.state.watch("items_revision", function()
+  invalidateItems()
+  runQuery(lastQuery)
+end)
 
 function onQuery(query)
   lastQuery = query
+  -- The CLI may reopen the launcher with its previous/empty input after Escape.
+  -- Restore the last copied item on the first query of an explicit keybind open.
+  if noctalia.state.get("restore_last_item") == true then
+    noctalia.state.set("restore_last_item", false)
+    local lastCopied = noctalia.state.get("last_copied_item")
+    if vaultStatus == "unlocked" and query == "" and type(lastCopied) == "table" and
+        type(lastCopied.name) == "string" and lastCopied.name ~= "" then
+      launcher.setQuery(lastCopied.name .. " ")
+      return
+    end
+  end
   runQuery(query)
 end
 
@@ -365,7 +425,11 @@ function onActivate(id)
       elseif actionType == "autotype" then
         noctalia.state.set("command", { action = "autotype", id = itemId })
       else
-        noctalia.state.set("command", { action = "copy", id = itemId, field = actionType })
+        local item = itemsCache[itemId]
+        noctalia.state.set("command", {
+          action = "copy", id = itemId, field = actionType,
+          name = if type(item) == "table" then item.name else nil,
+        })
       end
     end
     return
@@ -374,7 +438,6 @@ function onActivate(id)
   if id == "action:lock" then
     noctalia.state.set("command", { action = "lock" })
   elseif id == "action:sync" then
-    vaultItems = nil
     noctalia.state.set("command", { action = "sync" })
   elseif id == "action:export" then
     noctalia.state.set("command", { action = "export" })

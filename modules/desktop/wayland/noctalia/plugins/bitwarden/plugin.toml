@@ -16,16 +16,10 @@ entry = "launcher.luau"
 prefix = "bw"
 
 [[setting]]
-key = "export_encrypt_cmd"
-type = "string"
-label_key = "settings.export_encrypt_cmd.label"
-default = "age"
-
-[[setting]]
 key = "export_out_path"
 type = "string"
 label_key = "settings.export_out_path.label"
-default = "~/downloads/bitwarden_export.json.age"
+default = "~/downloads/bitwarden_export.json"
 
 [[setting]]
 key = "decrypt_cmd"
