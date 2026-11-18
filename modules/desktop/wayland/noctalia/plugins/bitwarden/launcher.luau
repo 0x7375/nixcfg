@@ -173,18 +173,6 @@ local function runQuery(query)
   local navItemId = nameIndex[text]
   local subQuery = ""
 
-  -- Prefer the precise item ID on re-opening, even if several items share a name.
-  local lastCopied = noctalia.state.get("last_copied_item")
-  if type(lastCopied) == "table" and type(lastCopied.id) == "string" and
-      type(lastCopied.name) == "string" and itemsCache[lastCopied.id] ~= nil then
-    if text == lastCopied.name then
-      navItemId = lastCopied.id
-    elseif text:sub(1, #lastCopied.name + 1) == lastCopied.name .. " " then
-      navItemId = lastCopied.id
-      subQuery = noctalia.string.trim(text:sub(#lastCopied.name + 2))
-    end
-  end
-
   if navItemId == nil then
     local bestMatchLen = 0
     for name, id in pairs(nameIndex) do
@@ -309,27 +297,6 @@ local function runQuery(query)
                 end
               end
             end
-
-            local lastCopied = noctalia.state.get("last_copied_item")
-            if type(lastCopied) == "table" and type(lastCopied.id) == "string" and
-                type(lastCopied.name) == "string" then
-              local currentItem = itemsCache[lastCopied.id]
-              if currentItem == nil then
-                -- The entry was removed on another device.
-                noctalia.state.set("last_copied_item", {})
-                if noctalia.string.trim(lastQuery) == lastCopied.name then
-                  launcher.setQuery("")
-                  return
-                end
-              elseif currentItem.name ~= lastCopied.name then
-                -- Follow renames without keeping a stale launcher query.
-                noctalia.state.set("last_copied_item", { id = lastCopied.id, name = currentItem.name })
-                if noctalia.string.trim(lastQuery) == lastCopied.name then
-                  launcher.setQuery(currentItem.name .. " ")
-                  return
-                end
-              end
-            end
           else
             vaultItems = nil
           end
@@ -391,17 +358,6 @@ end)
 
 function onQuery(query)
   lastQuery = query
-  -- The CLI may reopen the launcher with its previous/empty input after Escape.
-  -- Restore the last copied item on the first query of an explicit keybind open.
-  if noctalia.state.get("restore_last_item") == true then
-    noctalia.state.set("restore_last_item", false)
-    local lastCopied = noctalia.state.get("last_copied_item")
-    if vaultStatus == "unlocked" and query == "" and type(lastCopied) == "table" and
-        type(lastCopied.name) == "string" and lastCopied.name ~= "" then
-      launcher.setQuery(lastCopied.name .. " ")
-      return
-    end
-  end
   runQuery(query)
 end
 
