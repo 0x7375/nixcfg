@@ -82,7 +82,7 @@
       systemd.user.services."file-handler".serviceConfig.ExecStart = "${lib.getExe pkgs.file-handler}";
 
       xdg.desktopEntries.lf = {
-        exec = "${lib.getExe pkgs.lf} %u";
+        exec = "${lib.getExe pkgs.lf} %f";
         terminal = true;
         name = "Lf";
         type = "Application";
