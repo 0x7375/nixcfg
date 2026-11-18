@@ -134,9 +134,12 @@
       networking.firewall.enable = true;
     };
 
+  # asahi moment
+  flake.modules.nixos.woz.networking.networkmanager.ensureProfiles.profiles.bell.connection.interface-name =
+    "wld0";
+
   flake.modules.nixos.networkEnvironment =
     {
-      lib,
       config,
       secrets,
       ...
