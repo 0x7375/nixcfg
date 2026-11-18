@@ -28,6 +28,7 @@ local weStartedServe = false
 local sessionUnlocked = false
 local unlockDeadlineTick = nil
 local pendingQuietLock = false
+local resumeName = nil
 
 local status = {
   vault = "offline",
@@ -358,7 +359,7 @@ local function copyItemField(itemId, field, itemName)
       end
       touchUnlockActivity()
       if copySecret(value) and type(itemName) == "string" and itemName ~= "" then
-        noctalia.state.set("last_copied_item", { id = itemId, name = itemName })
+        resumeName = itemName
       end
     end)
   end
@@ -372,7 +373,7 @@ local function copyItemField(itemId, field, itemName)
       if value ~= nil then
         touchUnlockActivity()
         if copySecret(value) and type(itemName) == "string" and itemName ~= "" then
-          noctalia.state.set("last_copied_item", { id = itemId, name = itemName })
+          resumeName = itemName
         end
         return
       end
@@ -440,11 +441,10 @@ end
 
 local function openVaultLauncher(toggle)
   local query = "/bw "
-  local lastCopied = noctalia.state.get("last_copied_item")
-  if type(lastCopied) == "table" and type(lastCopied.name) == "string" and lastCopied.name ~= "" then
-    query ..= lastCopied.name .. " "
+  if resumeName ~= nil then
+    query ..= resumeName .. " "
+    resumeName = nil
   end
-  noctalia.state.set("restore_last_item", true)
   local command = if toggle then "panel-toggle" else "panel-open"
   noctalia.runAsync(`noctalia msg {command} launcher {shellQuote(query)}`)
 end
@@ -511,6 +511,7 @@ local function doUnlockCmd(openLauncher)
         setStatus({ error = err })
         return
       end
+      resumeName = nil
       sessionUnlocked = true
       pendingQuietLock = false
       touchUnlockActivity()
@@ -530,6 +531,7 @@ local function doLock(quiet)
       pollStatus()
       return
     end
+    resumeName = nil
     setStatus({ serveUp = true, vault = "locked", error = "" })
     if not quiet then noctalia.notify("Bitwarden", "Vault Locked") end
   end)

@@ -92,7 +92,7 @@
               [lockscreen_widgets]
               enabled = true
               schema_version = 2
-              widget_order = [  "lockscreen-login-box@${main}", "lockscreen-widget-${label}" ]
+              widget_order = [ "lockscreen-login-box@${main}", "lockscreen-widget-${label}" ]
 
                   [lockscreen_widgets.grid]
                   cell_size = 16
@@ -100,13 +100,25 @@
                   visible = true
 
                   [lockscreen_widgets.widget."lockscreen-login-box@${main}"]
-                  box_height = 0.0
-                  box_width = 0.0
+                  box_height = 70.0
+                  box_width = 400.0
                   cx = 711.0
-                  cy = 765.0
+                  cy = 765.86151123046875
                   output = "${main}"
                   rotation = 0.0
                   type = "login_box"
+
+                      [lockscreen_widgets.widget."lockscreen-login-box@${main}".settings]
+                      center_password_text = false
+                      layout = "compact"
+                      show_caps_lock = true
+                      show_keyboard_layout = true
+                      show_login_button = true
+                      show_media = true
+                      show_password_reveal = true
+                      show_session_buttons = true
+                      show_unlock_hint = true
+                      show_weather = false
 
                   [lockscreen_widgets.widget.lockscreen-widget-${label}]
                   box_height = 128.0
@@ -262,6 +274,17 @@
           age-plugin-fido2prf
           bitwarden-cli
           wtype
+          (pkgs.writeShellScriptBin "fido2-encrypt" ''
+            exec ${pkgs.my.fido2-encrypt} \
+              -i ${config.me.hosts.mainKey.securityKey.prfPath} \
+              -i ${config.me.hosts.backupKey.securityKey.prfPath} \
+              "$@"
+          '')
+          (pkgs.writeShellScriptBin "fido2-decrypt" ''
+            exec ${pkgs.my.fido2-decrypt} \
+              ${config.me.host.securityKey.prfPath} \
+              "$@"
+          '')
         ];
 
         sops.secrets.calendar_default_pw.owner = config.me.user;
@@ -271,6 +294,8 @@
           "noctalia/plugins/mango-layout".source = ./plugins/mango_layout;
           "noctalia/plugins/ask-password".source = ./plugins/ask_password;
           "noctalia/plugins/bitwarden".source = ./plugins/bitwarden;
+          "noctalia/plugins/tailnet".source = ./plugins/tailnet;
+          "noctalia/plugins/usb-manager".source = ./plugins/usb-manager;
         };
 
         systemd.user.services.noctalia = {
@@ -291,14 +316,24 @@
           "noctalia/settings.toml" = {
             generator = (pkgs.formats.toml { }).generate "noctalia-settings";
             value = {
+              widget = {
+                tailnet.type = "rylos/tailnet:bar";
+                usb-manager.type = "rylos/usb-manager:bar";
+              };
               bar = {
                 default = {
                   capsule = false;
+                  start = [
+                    "mango-layout"
+                    "active_window"
+                    "media"
+                  ];
                   center = [ "workspaces" ];
                   end = [
+                    "usb-manager"
                     "tray"
+                    "tailnet"
                     "notifications"
-                    "clipboard"
                     "brightness"
                     "volume"
                     "battery"
@@ -313,11 +348,6 @@
                   radius = 0;
                   reserve_space = true;
                   shadow = true;
-                  start = [
-                    "mango-layout"
-                    "active_window"
-                    "media"
-                  ];
                   widget_spacing = 10;
                 };
               };
@@ -544,9 +574,14 @@
                 "me/ask-password"
                 "me/bitwarden"
                 "nightwatch75/file-search"
+                "omerfuyar/process-manager"
+                "rylos/tailnet"
+                "rylos/usb-manager"
               ];
 
               plugin_settings = {
+                "rylos/usb-manager".auto_mount = true;
+                "omerfuyar/process-manager".panel_placement = "floating";
                 "nightwatch75/file-search" = {
                   show_hidden = true;
                   exclude_dirs = builtins.concatStringsSep "," [
@@ -567,11 +602,9 @@
                 "me/bitwarden" =
                   let
                     inherit (config.me.host.securityKey) name;
-                    inherit (config.me.hosts) backupKey mainKey;
                   in
                   {
-                    decrypt_cmd = "${pkgs.my.fido2-decrypt} ${config.me.host.securityKey.prfPath} ${./secrets/bitwarden_pw_${name}.age}";
-                    export_encrypt_cmd = "${pkgs.my.fido2-encrypt} -i ${mainKey.securityKey.prfPath} -i ${backupKey.securityKey.prfPath}";
+                    decrypt_cmd = "fido2-decrypt ${./secrets/bitwarden_pw_${name}.age}";
                   };
               };
             };

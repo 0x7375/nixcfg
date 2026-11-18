@@ -4,7 +4,15 @@ let
 in
 pkgs.writeShellApplication {
   name = "backup-vault";
-  runtimeInputs = [ pkgs.rsync ];
+
+  runtimeInputs = with pkgs; [
+    zip
+    openssh
+    coreutils
+    libfido2
+    gawk
+  ];
+
   text =
     # bash
     ''
@@ -17,47 +25,78 @@ pkgs.writeShellApplication {
       USB_PATH="''${*: -1}"
       EXPORT_FILES=("''${@:1:$#-1}")
 
-      [[ -d "$USB_PATH" ]] || { echo "USB path not found: $USB_PATH"; exit 1; }
+      [[ -d "$USB_PATH" ]] || {
+        echo "USB path not found: $USB_PATH"
+        exit 1
+      }
+
       for f in "''${EXPORT_FILES[@]}"; do
-        [[ -f "$f" ]] || { echo "File not found: $f"; exit 1; }
+        [[ -f "$f" ]] || {
+          echo "File not found: $f"
+          exit 1
+        }
       done
 
+      COUNT=$(fido2-token -L | awk 'NF {n++} END {print n+0}')
+      if (( COUNT < 2 )); then
+        echo "Two security keys must be connected."
+        exit 1
+      fi
+
       confirm() {
-        read -rn1 -p "$1 [Y/n] " REPLY
+        local reply
+        read -rn1 -p "$1 [Y/n] " reply || true
         echo
-        [[ "''${REPLY:-Y}" =~ ^[Yy]$ ]]
+        [[ "''${reply:-Y}" =~ ^[Yy]$ ]]
       }
 
-      stamp_name() {
-        local f="$1" file base ext
-        file="$(basename "$f")"
-        base="''${file%%.*}"
-        ext="''${file#*.}"
-        echo "''${base}_$(date +%Y%m%d_%H%M%S).''${ext}"
+      TMP_DIR=$(mktemp -d)
+      trap 'rm -rf -- "$TMP_DIR"' EXIT
+
+      NAME="vault_$(date +%Y%m%d_%H%M%S).zip.age"
+      ENCRYPTED="$TMP_DIR/$NAME"
+
+      echo "Creating and encrypting archive..."
+
+      if ! zip -q - "''${EXPORT_FILES[@]}" |
+        fido2-encrypt > "$ENCRYPTED"; then
+        echo "Encryption failed."
+        exit 1
+      fi
+
+      [[ -s "$ENCRYPTED" ]] || {
+        echo "Encrypted archive is empty."
+        exit 1
       }
+
+      copied=false
+      failed=false
 
       if confirm "Copy to server?"; then
-        ssh "$REMOTE" -- mkdir -p "$REMOTE_PATH"
-        for f in "''${EXPORT_FILES[@]}"; do
-          name="$(stamp_name "$f")"
-          scp "$f" "$REMOTE:$REMOTE_PATH/$name" && \
-          echo "* Copied to $REMOTE -> $REMOTE_PATH/$name"
-        done
+        if ssh "$REMOTE" -- mkdir -p "$REMOTE_PATH" \
+          && scp "$ENCRYPTED" "$REMOTE:$REMOTE_PATH/$NAME"; then
+          echo "* Copied to $REMOTE -> $REMOTE_PATH/$NAME"
+          copied=true
+        else
+          failed=true
+        fi
       fi
 
       if confirm "Copy to USB?"; then
-        for f in "''${EXPORT_FILES[@]}"; do
-          name="$(stamp_name "$f")"
-          cp "$f" "$USB_PATH/$name" && \
-          echo "* Copied to USB -> $USB_PATH/$name"
-        done
-        sync
+        if cp "$ENCRYPTED" "$USB_PATH/$NAME" && sync; then
+          echo "* Copied to USB -> $USB_PATH/$NAME"
+          copied=true
+        else
+          failed=true
+        fi
       fi
 
-      if confirm "Delete originals?"; then
-        for f in "''${EXPORT_FILES[@]}"; do
-          shred -u "$f" && echo "* Deleted $f"
-        done
+      if [[ "$copied" == true && "$failed" == false ]]; then
+        if confirm "Delete originals?"; then
+          for f in "''${EXPORT_FILES[@]}"; do
+            shred -u -- "$f" && echo "* Deleted $f"
+          done
+        fi
       fi
     '';
 }

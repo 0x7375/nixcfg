@@ -215,6 +215,7 @@
           "Mod+s" = getExe pkgs.my.tmux-sshr;
           "Mod+Shift+s" = "noctalia msg theme-mode-toggle";
           "Mod+y" = "noctalia msg panel-toggle control-center system";
+          "Mod+Shift+y" = "noctalia msg panel-toggle omerfuyar/process-manager:panel";
           "Mod+Alt+b" = btToggle;
           "Mod+Shift+i" = getExe wizToggle;
 

@@ -27,7 +27,7 @@
       services.tailscale = {
         enable = true;
         package = self.lib.withMainProgram "tailscale" mv.latest.tailscale;
-        extraUpFlags = [
+        extraSetFlags = [
           "--operator=${user}"
         ];
       };

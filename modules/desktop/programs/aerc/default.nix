@@ -40,7 +40,7 @@
         content =
           let
             inherit (config.me.host.securityKey) name;
-            decryptCmd = "${pkgs.my.fido2-decrypt} ${config.me.host.securityKey.prfPath} ${./aerc_pw_${name}.age}";
+            decryptCmd = "fido2-decrypt ${./aerc_pw_${name}.age}";
             uniPasswordCmd = "${pkgs.coreutils}/bin/cat ${config.sops.secrets.uni_pw.path}";
           in
           # ini

@@ -7,7 +7,12 @@
       ...
     }:
     {
-      services.udisks2.enable = true;
+      services.udisks2 = {
+        enable = true;
+        package = pkgs.udisks.override {
+          exfat = pkgs.exfatprogs;
+        };
+      };
 
       persistUser.directories = [ ".config/kdeconnect" ];
 
@@ -16,6 +21,7 @@
         ntfs3g
         exfat
         xarchiver
+        glib
       ];
 
       programs.kdeconnect.enable = true;
