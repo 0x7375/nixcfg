@@ -56,6 +56,10 @@ local function hasText(v)
   return type(v) == "string" and v ~= ""
 end
 
+local function shellQuote(s)
+  return "'" .. string.gsub(tostring(s), "'", "'\\''") .. "'"
+end
+
 local function itemHasUsername(item)
   return type(item) == "table" and type(item.login) == "table" and hasText(item.login.username)
 end
@@ -76,6 +80,17 @@ local function itemHasUri(item)
     if type(u) == "table" and hasText(u.uri) then return true end
   end
   return false
+end
+
+local function firstWebUrl(item)
+  if type(item) ~= "table" or type(item.login) ~= "table" or type(item.login.uris) ~= "table" then return nil end
+  for _, u in item.login.uris do
+    if type(u) == "table" and hasText(u.uri) and u.match ~= 4 and u.match ~= 5 then
+      local url = noctalia.string.trim(u.uri)
+      if url:lower():match("^https?://[^%s]+$") then return url end
+    end
+  end
+  return nil
 end
 
 local function subActionRows(itemId)
@@ -112,8 +127,11 @@ local function subActionRows(itemId)
   if unknown or (itemHasUsername(item) and itemHasPassword(item)) then
     table.insert(rows, hint("subaction:" .. itemId .. ":autotype", "Autotype", "Type username, Tab, then password", "keyboard"))
   end
+  if firstWebUrl(item) ~= nil then
+    table.insert(rows, hint("subaction:" .. itemId .. ":url", "Open URL", "Open the item linked url in your browser", "link"))
+  end
   if unknown or itemHasUri(item) then
-    table.insert(rows, hint("subaction:" .. itemId .. ":web", "Open in Web Vault", "Open this specific item in your browser", "external-link"))
+    table.insert(rows, hint("subaction:" .. itemId .. ":web", "Open in Web Vault", "Open this item in your browser", "external-link"))
   end
   return rows
 end
@@ -378,6 +396,9 @@ function onActivate(id)
 
       if actionType == "web" then
         noctalia.runAsync(`xdg-open "https://vault.bitwarden.com/#/vault?itemId={itemId}"`)
+      elseif actionType == "url" then
+        local url = firstWebUrl(itemsCache[itemId])
+        if url ~= nil then noctalia.runAsync("xdg-open " .. shellQuote(url)) end
       elseif actionType == "autotype" then
         noctalia.state.set("command", { action = "autotype", id = itemId })
       else
