@@ -10,6 +10,12 @@
     { pkgs, ... }:
     {
       packages = with pkgs; [ gnumake ];
+
+      hj.xdg.config.files."clangd/config.yaml".text = # yaml
+        ''
+          CompileFlags:
+            BuiltinHeaders: QueryDriver
+        '';
     };
 
   flake.modules.nixos.dev =
