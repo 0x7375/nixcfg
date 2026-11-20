@@ -1,7 +1,6 @@
 { inputs, self, ... }:
 
 let
-  root = ./../../../..;
   mkNeovim =
     {
       pkgs,
@@ -23,7 +22,19 @@ let
           };
         };
 
-      initLua = builtins.readFile (root + /nvim/init.lua);
+      initLua =
+        # lua
+        ''
+          -- loads ~/.config/nvim if it exists, pinned miv input otherwise
+          local localDir = vim.fn.expand("~/.config/nvim")
+          local dir = vim.fn.filereadable(localDir .. "/init.lua") == 1
+            and localDir
+            or "${inputs.miv}"
+
+          vim.opt.runtimepath:prepend(dir)
+          vim.opt.runtimepath:append(dir .. "/after")
+          dofile(dir .. "/init.lua")
+        '';
 
       providers = {
         ruby.enable = false;
@@ -33,11 +44,6 @@ let
       };
 
       plugins = {
-        dev.config = {
-          pure = "${root + /nvim}";
-          impure = "~/.config/nixcfg/nvim";
-        };
-
         start =
           with pkgs.vimPlugins;
           [
@@ -169,10 +175,25 @@ in
 {
   perSystem =
     { pkgs, ... }:
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+    in
     {
-      packages.neovim = mkNeovim {
-        inherit pkgs;
-        mv = inputs.multiverse.multiverse.${pkgs.stdenv.hostPlatform.system}.fast;
+      packages = {
+        neovim = mkNeovim {
+          inherit pkgs;
+          mv = inputs.multiverse.multiverse.${system}.fast;
+        };
+
+        neovim-full = mkNeovim {
+          pkgs = import inputs.nixpkgs.outPath {
+            inherit system;
+            config.allowUnfree = true;
+          };
+          mv = inputs.multiverse.multiverse.${system}.fast;
+          lsp = true;
+          unfree = true;
+        };
       };
     };
 
@@ -180,7 +201,6 @@ in
     {
       pkgs,
       mv,
-      config,
       ...
     }:
     {
@@ -198,8 +218,6 @@ in
           unfree = true;
         })
       ];
-
-      hj.xdg.config.files."nvim".source = "${config.me.flakeDir}/nvim";
     };
 
   flake.modules.darwin.desktop =
@@ -209,22 +227,18 @@ in
         (mkNeovim {
           inherit pkgs mv;
           unfree = true;
-        }).devMode
+        })
       ];
     };
 
   flake.modules.nixos.desktop =
-    {
-      pkgs,
-      mv,
-      ...
-    }:
+    { pkgs, mv, ... }:
     {
       packages = [
         (mkNeovim {
           inherit pkgs mv;
           unfree = true;
-        }).devMode
+        })
       ];
     };
 

@@ -56,9 +56,6 @@
           [diff]
             external = "difft"
 
-          [submodule]
-            recurse = true
-
           [gpg]
             format = "ssh"
 

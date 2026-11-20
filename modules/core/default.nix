@@ -31,13 +31,6 @@
       };
 
       config = {
-        assertions = [
-          {
-            assertion = (self.submodules or true) == true;
-            message = "Unable to build without submodules. Append '?submodules=1#' to the URI like: .?submodules=1#host";
-          }
-        ];
-
         programs.nix-index-database.comma.enable = true;
         programs.nix-index.enable = true;
       };

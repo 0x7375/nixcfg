@@ -1,3 +1,0 @@
-[submodule "nvim"]
-	path = nvim
-	url = git@codeberg.org:0x7E/miv

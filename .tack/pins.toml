@@ -28,6 +28,10 @@ url = "gh:Ladas552/flake-parts"
 [inputs.mnw]
 url = "gh:Gerg-L/mnw"
 
+[inputs.miv]
+url = "cb:0x7E/miv"
+type = "fetch"
+
 [inputs.nixflix]
 url = "gh:kiriwalawren/nixflix"
 

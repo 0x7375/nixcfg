@@ -208,11 +208,23 @@
           }
 
           bump-nvim() {
-            ${
+            ${cdDotfiles
               # bash
-              cdDotfiles ''
-                ${git} add nvim
-                ${git} commit -m "chore: update nvim" -- nvim
+              ''
+                if ! ${git} diff --quiet -- .tack/pins.lock.json ||
+                   ! ${git} diff --cached --quiet -- .tack/pins.lock.json; then
+                  echo "Lockfile has uncommitted changes" >&2
+                  return 1
+                fi
+
+                tack update miv || return
+
+                if ${git} diff --quiet -- .tack/pins.lock.json; then
+                  echo "miv already up to date"
+                  return 0
+                fi
+
+                ${git} commit --only -m "chore: update miv" -- .tack/pins.lock.json
               ''
             }
           }

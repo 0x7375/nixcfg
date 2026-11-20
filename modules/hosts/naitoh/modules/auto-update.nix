@@ -40,7 +40,7 @@
               } -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
 
               if [[ ! -d "$DIR" ]]; then
-                git clone --recurse-submodules git@codeberg.org:0x7E/nixcfg "$DIR"
+                git clone git@codeberg.org:0x7E/nixcfg "$DIR"
               fi
 
               cd "$DIR"
@@ -60,7 +60,7 @@
                         )
                         (builtins.attrNames configs)
                     )
-                ' '.?submodules=1#nixosConfigurations'
+                ' '.#nixosConfigurations'
               }
 
               old_drvs=$(system_drvs)
@@ -90,7 +90,7 @@
                 exit 0
               fi
 
-              if ! nix flake check --all-systems .?submodules=1; then
+              if ! nix flake check --all-systems .; then
                 echo "nix flake check failed, discarding lock update" >&2
                 git restore -- "$LOCKFILE"
                 exit 1

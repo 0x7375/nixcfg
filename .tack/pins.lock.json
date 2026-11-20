@@ -79,6 +79,14 @@
     "narHash": "sha256-2RLkniNvhc9x0FravDTctqgCoaDzN8gMMyO1ZaTaxAU=",
     "lastModified": 1793888034
   },
+  "miv": {
+    "type": "git",
+    "url": "https://codeberg.org/0x7E/miv",
+    "ref": "HEAD",
+    "rev": "56eecf335d9193b5f445fe4f70b8f633984fc81f",
+    "narHash": "sha256-gwsF54Lzw+lW/lkm2WSB6L8UOYHSA6DHO2rBoycUsRg=",
+    "lastModified": 1795134930
+  },
   "mnw": {
     "type": "github",
     "owner": "Gerg-L",

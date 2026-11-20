@@ -82,11 +82,8 @@
             nixcfg = {
               from.type = "indirect";
               from.id = "nixcfg";
-              to = {
-                type = "git";
-                url = "file://${config.me.flakeDir}";
-                submodules = true;
-              };
+              to.type = "git";
+              to.url = "file://${config.me.flakeDir}";
             };
           };
         };
