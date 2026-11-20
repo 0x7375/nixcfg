@@ -1,6 +1,11 @@
 {
   flake.modules.generic.core =
-    { inputs, pkgs, ... }:
+    {
+      mv,
+      inputs,
+      pkgs,
+      ...
+    }:
     {
       packages = with pkgs; [
         wireguard-tools
