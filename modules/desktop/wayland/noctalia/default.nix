@@ -71,69 +71,134 @@
               secondary ? null,
             }:
             let
-              label = "label";
+              mkFields =
+                attrs:
+                lib.concatStringsSep "\n" (
+                  lib.mapAttrsToList (name: value: "${name} = ${builtins.toJSON value}") attrs
+                );
+
+              mkWidget =
+                id: attrs:
+                # toml
+                ''
+                  [lockscreen_widgets.widget."${id}"]
+                  ${mkFields (removeAttrs attrs [ "settings" ])}
+
+                  [lockscreen_widgets.widget."${id}".settings]
+                  ${mkFields attrs.settings}
+                '';
+
+              placement = {
+                placement_width = 1920.0;
+                placement_height = 1080.0;
+                rotation = 0.0;
+              };
+
+              mkLogin =
+                output: isMain:
+                mkWidget "lockscreen-login-box@${output}" (
+                  placement
+                  // {
+                    enabled = isMain;
+                    inherit output;
+                    type = "login_box";
+
+                    box_height = 70.0;
+                    box_width = 400.0;
+                    cx = 960.0;
+                    cy = 873.0;
+
+                    settings = {
+                      background_color = "surface_container";
+                      background_opacity = 0.88;
+                      background_radius = 12.0;
+                      input_opacity = 1.0;
+                      input_radius = 6.0;
+                      center_password_text = false;
+                      layout = "compact";
+                      show_caps_lock = true;
+                      show_login_button = true;
+                      show_password_reveal = true;
+                      show_session_buttons = true;
+                      show_keyboard_layout = false;
+                      show_media = false;
+                      show_unlock_hint = false;
+                      show_weather = false;
+                    };
+                  }
+                );
             in
             # toml
             ''
               [notification]
               monitors = [ "${main}" ]
-              ${
-                if secondary != null then
-                  # toml
-                  ''
-                    [bar.default.monitor.${secondary}]
-                    auto_hide = true
-                    reserve_space = false
-                  ''
-                else
-                  ""
+
+              ${lib.optionalString (secondary != null)
+                # toml
+                ''
+                  [bar.default.monitor.${secondary}]
+                  auto_hide = true
+                  reserve_space = false
+                ''
               }
 
               [lockscreen_widgets]
               enabled = true
               schema_version = 2
-              widget_order = [ "lockscreen-login-box@${main}", "lockscreen-widget-${label}" ]
+              widget_order = ${
+                builtins.toJSON (
+                  lib.optional (secondary != null) "lockscreen-login-box@${secondary}"
+                  ++ [
+                    "lockscreen-login-box@${main}"
+                    "lockscreen-widget-clock"
+                    "lockscreen-widget-label"
+                  ]
+                )
+              }
 
-                  [lockscreen_widgets.grid]
-                  cell_size = 16
-                  major_interval = 4
-                  visible = true
+              [lockscreen_widgets.grid]
+              cell_size = 24
+              major_interval = 4
+              visible = true
 
-                  [lockscreen_widgets.widget."lockscreen-login-box@${main}"]
-                  box_height = 70.0
-                  box_width = 400.0
-                  cx = 711.0
-                  cy = 765.86151123046875
-                  output = "${main}"
-                  rotation = 0.0
-                  type = "login_box"
+              ${lib.optionalString (secondary != null) (mkLogin secondary false)}
+              ${mkLogin main true}
 
-                      [lockscreen_widgets.widget."lockscreen-login-box@${main}".settings]
-                      center_password_text = false
-                      layout = "compact"
-                      show_caps_lock = true
-                      show_keyboard_layout = true
-                      show_login_button = true
-                      show_media = true
-                      show_password_reveal = true
-                      show_session_buttons = true
-                      show_unlock_hint = true
-                      show_weather = false
+              ${mkWidget "lockscreen-widget-clock" (
+                placement
+                // {
+                  type = "clock";
+                  output = main;
 
-                  [lockscreen_widgets.widget.lockscreen-widget-${label}]
-                  box_height = 128.0
-                  box_width = 368.0
-                  cx = 711.0
-                  cy = 236.0
-                  output = "${main}"
-                  rotation = 0.0
-                  type = "label"
+                  box_height = 216.0;
+                  box_width = 360.0;
+                  cx = 960.0;
+                  cy = 384.0;
 
-                      [lockscreen_widgets.widget.lockscreen-widget-${label}.settings]
-                      background = false
-                      background_opacity = 1.0
-                      shadow = false
-                      title = "Locked"
+                  settings = {
+                    background = false;
+                    clock_style = "digital";
+                  };
+                }
+              )}
+
+              ${mkWidget "lockscreen-widget-label" (
+                placement
+                // {
+                  type = "label";
+                  output = main;
+
+                  box_height = 64.0;
+                  box_width = 128.0;
+                  cx = 960.0;
+                  cy = 476.0;
+
+                  settings = {
+                    background = false;
+                    title = "Locked";
+                  };
+                }
+              )}
             '';
         in
         {
@@ -343,6 +408,7 @@
                     "network"
                     "clock"
                   ];
+                  dead_zone.actions.middle = "bar-toggle";
                   margin_edge = 0;
                   margin_ends = 0;
                   radius = 0;
@@ -386,6 +452,7 @@
               config = { };
 
               control_center = {
+                show_events_location = true;
                 sidebar_section = "none";
                 shortcuts = [
                   { type = "wifi"; }
@@ -436,9 +503,11 @@
                 background_opacity = 1.0;
                 position = "top_center";
                 show_app_name = false;
+                border = false;
               };
 
               osd = {
+                border = false;
                 position = "top_center";
                 kinds.media = false;
               };
@@ -452,6 +521,12 @@
                 settings_show_advanced = true;
                 telemetry_enabled = true;
                 setup_wizard_enabled = false;
+                button_borders = false;
+                card_borders = false;
+                input_borders = false;
+                popup_borders = false;
+                readline_shortcuts = true;
+                show_close_buttons = false;
 
                 session.actions = [
                   {
@@ -516,13 +591,14 @@
                 ];
                 animation = {
                   enabled = true;
-                  speed = 2.0;
+                  speed = 1.25;
                 };
                 launcher = {
                   categories = false;
                   layout = "simple";
                 };
                 panel = {
+                  borders = false;
                   open_near_click_control_center = true;
                   session_placement = "floating";
                 };
@@ -615,19 +691,6 @@
               dark = mkScheme dark;
               light = mkScheme light;
             };
-          };
-          "noctalia/notification-rules.json" = {
-            generator = lib.strings.toJSON;
-            value.rules = [
-              {
-                action = "block";
-                pattern = "Youtube_Music";
-              }
-              # {
-              #   action = "hide";
-              #   pattern = "vesktop";
-              # }
-            ];
           };
         };
 
