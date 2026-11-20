@@ -25,6 +25,7 @@
         my.nlink
         my.dump-dotfiles
         my.cuckcoding
+        mv.latest.codex
         dix
       ];
     };
@@ -34,6 +35,7 @@
     {
       persistUser.directories = [
         ".cache/tlrc"
+        ".config/codex"
       ];
 
       packages = with pkgs; [
