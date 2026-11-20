@@ -99,9 +99,9 @@
     "type": "github",
     "owner": "fzakaria",
     "repo": "nixpkgs-multiverse",
-    "rev": "c705ba657fcfa6b4df58e033e4d039c0f5ce902e",
-    "narHash": "sha256-irQFntIvwozY4ikZtTZYakf3rkQDkBWgFJJtaIWmyiQ=",
-    "lastModified": 1795130755
+    "rev": "32c8cf7714f8c358b94cbd015d4ce10a0fcd44bd",
+    "narHash": "sha256-VF2vjcwDwn95SCKFV3WgUS1GLbVJxvpUoiNHL4AaY+I=",
+    "lastModified": 1795186772
   },
   "nd": {
     "type": "git",
