@@ -250,6 +250,7 @@ in
       ".local/share/mnw"
       ".local/state/nvim"
       ".local/state/mnw"
+      ".config/nvim"
     ];
 
     xdg.mimeApps.defaultApplications = self.lib.mapMimeEntries [
