@@ -51,9 +51,9 @@
     "type": "github",
     "owner": "amaanq",
     "repo": "helium-flake",
-    "rev": "9be7b412d7a7fe42907f3b3627c72e304bab475e",
-    "narHash": "sha256-QpwgEbDFMnKvn5q0eXQwn1es3LNcfxRZMHE9anF54W0=",
-    "lastModified": 1795035192
+    "rev": "a3f2a905050e19c50d367260d4f732a142e1b369",
+    "narHash": "sha256-R/nreI9LwJkrzGMn1Ty5o+OUKFdONAFuF0rUq9kv4v4=",
+    "lastModified": 1795294473
   },
   "hjem": {
     "type": "github",
@@ -99,9 +99,9 @@
     "type": "github",
     "owner": "fzakaria",
     "repo": "nixpkgs-multiverse",
-    "rev": "32c8cf7714f8c358b94cbd015d4ce10a0fcd44bd",
-    "narHash": "sha256-VF2vjcwDwn95SCKFV3WgUS1GLbVJxvpUoiNHL4AaY+I=",
-    "lastModified": 1795186772
+    "rev": "c032dcd5bf297f4417cacd06daca0ff34c8f07db",
+    "narHash": "sha256-1qDUHxS2nUZGpzu11EzaUOLwlZogggk4p8zgiN7k5Lg=",
+    "lastModified": 1795292042
   },
   "nd": {
     "type": "git",
