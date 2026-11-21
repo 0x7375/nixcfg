@@ -56,6 +56,16 @@ local function hasText(v)
   return type(v) == "string" and v ~= ""
 end
 
+-- Keep launcher subtitles short and single-line. The full value is still copied.
+local function displayValue(value)
+  local text = value:gsub("[%c]+", " ")
+  text = noctalia.string.trim(text)
+  if #text > 100 then
+    text = text:sub(1, 100) .. "…"
+  end
+  return text
+end
+
 local function shellQuote(s)
   return "'" .. string.gsub(tostring(s), "'", "'\\''") .. "'"
 end
@@ -102,22 +112,29 @@ local function subActionRows(itemId)
   local unknown = item == nil
 
   if unknown or itemHasPassword(item) then
-    table.insert(rows, hint("subaction:" .. itemId .. ":password", "Copy Password", "Copy the item password to clipboard", "key"))
+    table.insert(rows, hint("subaction:" .. itemId .. ":password", "Copy Password", "Hidden", "key"))
   end
   if unknown or itemHasUsername(item) then
-    table.insert(rows, hint("subaction:" .. itemId .. ":username", "Copy Username", "Copy the item username to clipboard", "user"))
+    local username = if itemHasUsername(item) then displayValue(item.login.username) else "Copy the item username to clipboard"
+    table.insert(rows, hint("subaction:" .. itemId .. ":username", "Copy Username", username, "user"))
   end
   if unknown or itemHasTotp(item) then
-    table.insert(rows, hint("subaction:" .. itemId .. ":totp", "Copy TOTP", "Copy the two-factor authentication code", "shield"))
+    table.insert(rows, hint("subaction:" .. itemId .. ":totp", "Copy TOTP", "Hidden", "shield"))
   end
-  
+
   if item ~= nil and type(item.fields) == "table" then
     for _, f in ipairs(item.fields) do
       if type(f) == "table" and hasText(f.name) and hasText(f.value) then
+        local subtitle = "Hidden"
+        if f.type == 0 or f.type == 2 or f.type == nil then
+          subtitle = displayValue(f.value)
+        elseif f.type == 3 then
+          subtitle = "Linked field"
+        end
         table.insert(rows, hint(
-          "subaction:" .. itemId .. ":custom:" .. f.name, 
-          "Copy " .. f.name, 
-          "Copy custom field to clipboard", 
+          "subaction:" .. itemId .. ":custom:" .. f.name,
+          "Copy " .. f.name,
+          subtitle,
           "file-text"
         ))
       end
@@ -155,7 +172,10 @@ local function buildSearchTerms(item)
     for _, f in ipairs(item.fields) do
       if type(f) == "table" then
         if type(f.name) == "string" and f.name ~= "" then table.insert(terms, f.name) end
-        if type(f.value) == "string" and f.value ~= "" then table.insert(terms, f.value) end
+        -- Hidden and linked values should not be searchable as plain text.
+        if (f.type == 0 or f.type == 2 or f.type == nil) and hasText(f.value) then
+          table.insert(terms, f.value)
+        end
       end
     end
   end
