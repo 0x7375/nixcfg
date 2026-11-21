@@ -21,7 +21,16 @@
       };
     in
     {
-      packages = [ pkgs.btop ];
+      packages = [
+        (pkgs.btop.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [
+            (pkgs.fetchpatch {
+              url = "https://github.com/aristocratos/btop/commit/a87dd16e78a862b6a2c4ea0206317d958cdf41de.patch";
+              hash = "sha256-SJdj1Mb09wxopenXPVSmdS9fAUOw+3bzB6cnZbQ2nRA=";
+            })
+          ];
+        }))
+      ];
 
       hj.xdg.config.files."btop/btop.conf".text = toKeyValue {
         color_theme = "custom";
