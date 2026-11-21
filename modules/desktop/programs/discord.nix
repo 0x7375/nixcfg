@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.desktop =
-    { config, ... }:
+    { mv, config, ... }:
     {
       persistUser.directories = [
         ".config/vesktop"
@@ -15,10 +15,18 @@
         }
       ];
 
+      packages = [
+        mv.latest.vesktop
+      ];
+
       programs.nixcord = {
         enable = true;
         discord.enable = false;
-        vesktop.enable = true;
+        vesktop = {
+          enable = true;
+          installPackage = false;
+          useSystemVencord = false;
+        };
 
         inherit (config.me) user;
         config.plugins = {
