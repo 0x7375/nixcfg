@@ -1,29 +1,36 @@
 id = "me/bitwarden"
-name = "Bitwarden FIDO2"
-version = "1.0.0"
-plugin_api = 8
+name = "Bitwarden"
+version = "2.7.0"
+plugin_api = 43
 author = "me"
-min_noctalia = "5.0.0"
-dependencies = ["bitwarden-cli", "wtype"]
+min_noctalia = "5.4.0"
+dependencies = ["bitwarden-cli", "python3", "wtype", "xdg-utils"]
 
 [[service]]
 id = "service"
 entry = "service.luau"
 
-[[launcher_provider]]
-id = "finder"
-entry = "launcher.luau"
-prefix = "bw"
-
-[[setting]]
-key = "export_out_path"
-type = "string"
-label_key = "settings.export_out_path.label"
-default = "~/downloads/bitwarden_export.json"
+[[panel]]
+id = "vault"
+entry = "panel.luau"
+width = 530
+height = 610
+placement = "floating"
+position = "center"
+keyboard_focus = "exclusive"
+dismiss_on_outside_click = false
+capture_keys = ["up", "down", "ctrl+n", "ctrl+p", "ctrl+j", "ctrl+k", "Return", "KP_Enter", "ctrl+m", "alt+h", "ctrl+o", "space", "ctrl+s", "ctrl+t"]
 
 [[setting]]
 key = "decrypt_cmd"
 type = "string"
 label_key = "settings.decrypt_cmd.label"
 default = ""
-description_key = "Command to execute that returns the master password"
+description_key = "Command that returns the master password using your security key. Never logged or passed as an argument to bw."
+
+[[setting]]
+key = "website_icons"
+type = "bool"
+label_key = "settings.website_icons.label"
+default = false
+description_key = "settings.website_icons.description"

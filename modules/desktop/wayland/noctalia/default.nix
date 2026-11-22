@@ -400,8 +400,6 @@
                     "brightness"
                     "volume"
                     "battery"
-                    "sysmon"
-                    "ram"
                     "bluetooth"
                     "network"
                     "clock"
@@ -488,6 +486,16 @@
                   "Ctrl+p"
                   "Ctrl+k"
                   "Up"
+                ];
+                tab_previous = [
+                  "Ctrl+p"
+                  "Ctrl+k"
+                  "Shift+ISO_Left_Tab"
+                ];
+                tab_next = [
+                  "Ctrl+n"
+                  "Ctrl+j"
+                  "Tab"
                 ];
                 validate = [
                   "Ctrl+m"
@@ -679,6 +687,7 @@
                   in
                   {
                     decrypt_cmd = "fido2-decrypt ${./secrets/bitwarden_pw_${name}.age}";
+                    website_icons = true;
                   };
               };
             };
