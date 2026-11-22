@@ -30,9 +30,27 @@
         my.nlink
         my.dump-dotfiles
         my.cuckcoding
-        mv.latest.codex
+        # wrapper to always trust current dir
+        (pkgs.writeShellApplication {
+          name = "codex";
+          text = ''
+            exec ${lib.getExe mv.latest.codex} \
+              -c "projects={\"$PWD\"={trust_level=\"trusted\"}}" \
+              "$@"
+          '';
+        })
         dix
       ];
+
+      hj.xdg.config.files."codex/config.toml" = {
+        type = "copy";
+        permissions = "0644";
+        text = # toml
+          ''
+            check_for_update_on_startup = false
+            sandbox_mode = "workspace-write"
+          '';
+      };
     };
 
   flake.modules.nixos.core =
