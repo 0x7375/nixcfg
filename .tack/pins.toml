@@ -109,4 +109,4 @@ url = "gh:nix-community/neovim-nightly-overlay"
 url = "gh:mangowm/mango/15e7d367077a2d1a72c88da761ab183228680823"
 
 [inputs.noctalia]
-url = "gh:noctalia-dev/noctalia/v5.4.1"
+url = "gh:noctalia-dev/noctalia/v5.6.0"

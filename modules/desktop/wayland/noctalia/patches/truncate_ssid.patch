@@ -1,7 +1,8 @@
 diff --git a/src/shell/bar/widgets/network_widget.cpp b/src/shell/bar/widgets/network_widget.cpp
+index fbd63fe..3085c4e 100644
 --- a/src/shell/bar/widgets/network_widget.cpp
 +++ b/src/shell/bar/widgets/network_widget.cpp
-@@ -23,7 +23,7 @@
+@@ -26,7 +26,7 @@ namespace {
  
    std::string labelForState(const NetworkState& s, const CellularModemInfo* modem) {
      if (s.kind == NetworkConnectivity::Wireless && s.connected && !s.ssid.empty()) {

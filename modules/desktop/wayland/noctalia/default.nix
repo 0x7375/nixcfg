@@ -240,8 +240,6 @@
                 ./patches/glyph_dmenu_cli.patch
                 ./patches/original_critical_toast.patch
                 ./patches/hide_discord_toast_body.patch
-                # NOTE: until I update to a version with: https://github.com/noctalia-dev/noctalia/pull/5275
-                ./patches/discover_ical_calendar_colors.patch
               ];
             });
 

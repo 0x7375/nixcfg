@@ -1,23 +1,24 @@
 diff --git a/src/shell/notification/notification_toast.cpp b/src/shell/notification/notification_toast.cpp
+index 13d0bb3..7fb002c 100644
 --- a/src/shell/notification/notification_toast.cpp
 +++ b/src/shell/notification/notification_toast.cpp
-@@ -124,29 +124,22 @@
+@@ -126,29 +126,22 @@ namespace {
      return std::max(0.1F, accessibility.uiScale * notification.scale);
    }
  
--  [[nodiscard]] ColorSpec toastBorderColor(const ConfigService* config, Urgency urgency) {
+-  ColorSpec toastBorderColor(const ConfigService* config, Urgency urgency) {
 -    if (urgency == Urgency::Critical) {
 -      return colorSpecFromRole(ColorRole::Error);
 -    }
-+  [[nodiscard]] ColorSpec toastBorderColor(const ConfigService* config, Urgency /*urgency*/) {
++  ColorSpec toastBorderColor(const ConfigService* config) {
      if (config == nullptr) {
        return colorSpecFromRole(ColorRole::OutlineVariant);
      }
      return config->config().notification.borderColor;
    }
  
--  [[nodiscard]] float toastBorderWidth(const ConfigService* config, Urgency urgency, float scale) {
-+  [[nodiscard]] float toastBorderWidth(const ConfigService* config, Urgency /*urgency*/, float scale) {
+-  float toastBorderWidth(const ConfigService* config, Urgency urgency, float scale) {
++  float toastBorderWidth(const ConfigService* config, float scale) {
      if (config == nullptr) {
 -      return (urgency == Urgency::Critical ? Style::emphasizedBorderWidth : Style::borderWidth) * scale;
 +      return Style::borderWidth * scale;
@@ -34,4 +35,15 @@ diff --git a/src/shell/notification/notification_toast.cpp b/src/shell/notificat
 +    return std::max(0.0F, notification.borderWidth) * scale;
    }
  
-   [[nodiscard]] float notificationWidth(const ConfigService* config) {
+   float notificationWidth(const ConfigService* config) {
+@@ -2610,8 +2603,8 @@ InputArea* NotificationToast::buildCard(
+   *outCardForeground = foreground.get();
+ 
+   const float bgAlpha = m_config != nullptr ? m_config->config().notification.backgroundOpacity : 0.97F;
+-  const float borderWidth = toastBorderWidth(m_config, entry.urgency, scale);
+-  const ColorSpec borderColor = toastBorderColor(m_config, entry.urgency);
++  const float borderWidth = toastBorderWidth(m_config, scale);
++  const ColorSpec borderColor = toastBorderColor(m_config);
+   if (outProgress != nullptr) {
+     *outProgress = nullptr;
+   }
