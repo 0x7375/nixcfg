@@ -36,19 +36,15 @@
             finalImageTag = version;
           };
 
-          extraOptions = [
-            "--add-host=host.docker.internal:host-gateway"
-          ];
+          extraOptions = [ "--network=host" ];
 
           volumes = [
             "/data/main/.state/dashbrr/:/data"
           ];
 
-          ports = [ "${toString port}:${toString port}" ];
-
           environment = {
             TZ = toString config.time.timeZone;
-            DASHBRR__LISTEN_ADDR = "0.0.0.0:${toString port}";
+            DASHBRR__LISTEN_ADDR = "127.0.0.1:${toString port}";
             DASHBRR__DB_TYPE = "sqlite";
             DASHBRR__DB_PATH = "/data/dashbrr.db";
             DASHBRR__LOG_LEVEL = "info";

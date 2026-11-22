@@ -30,7 +30,7 @@
         package = self.lib.withMainProgram "autobrr" mv.latest.autobrr;
         secretFile = config.sops.secrets.autobrr_session.path;
         settings = {
-          host = "0.0.0.0";
+          host = "127.0.0.1";
           checkForUpdates = false;
         };
       };

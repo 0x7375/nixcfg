@@ -115,7 +115,7 @@
         group = config.services.qbittorrent.group;
         openFirewall = true;
         secretFile = config.sops.secrets.qui_session.path;
-        settings.host = "0.0.0.0";
+        settings.host = "127.0.0.1";
       };
 
       systemd.services.qui = {

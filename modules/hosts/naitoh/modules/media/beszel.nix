@@ -68,7 +68,7 @@
       services.beszel = {
         hub = {
           enable = true;
-          host = "0.0.0.0";
+          host = "127.0.0.1";
           environment = {
             KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGrkPu4QJhKyEoiI+aADBILeUDcg0tx1Q46x36+jlS1I";
             HUB_URL = "http://127.0.0.1:${toString port}";

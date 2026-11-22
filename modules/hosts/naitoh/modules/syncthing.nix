@@ -6,8 +6,7 @@
       ...
     }:
     let
-      inherit (config.me) hostname services;
-      inherit (services.syncthing) port;
+      inherit (config.me) hostname;
     in
     {
       me.services.syncthing = {
@@ -26,7 +25,6 @@
 
       services.syncthing = {
         enable = lib.mkForce true;
-        guiAddress = "0.0.0.0:${toString port}";
         openDefaultPorts = true;
         settings.devices =
           let
