@@ -20,8 +20,6 @@
 
       users.users.syncthing.extraGroups = [ "media" ];
 
-      networking.firewall.allowedTCPPorts = [ port ];
-
       me.syncthing.dataRoot = "/data/main/syncthing/";
 
       persist.directories = [ "/var/lib/syncthing" ];

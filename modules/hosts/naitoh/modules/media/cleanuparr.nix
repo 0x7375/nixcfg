@@ -5,9 +5,6 @@
       config,
       ...
     }:
-    let
-      inherit (config.me.services.cleanuparr) port;
-    in
     {
       me.services.cleanuparr = {
         subdomain = "cleanup";
@@ -21,33 +18,27 @@
         mode = "0755";
       };
 
-      networking.firewall.allowedTCPPorts = [ port ];
-
       virtualisation.oci-containers.containers.cleanuparr =
         let
           name = "ghcr.io/cleanuparr/cleanuparr";
-          version = "2.10";
+          version = "2.11.1";
         in
         {
           image = name + ":" + version;
 
           imageFile = pkgs.dockerTools.pullImage {
             imageName = name;
-            imageDigest = "sha256:9f74fa60bbf84c82b86f69fbef75189dd3e38408f99fd9c1895736185c4620b9";
-            sha256 = "lkXBgq6WXg/zT5n7mbd3DHjhSShmz5EiBPg94hHw/1o=";
+            imageDigest = "sha256:923c2fe435e22fc58d261bacd2d6bbd8eb1ba3f95358803a8e4d3287ffd919d3";
+            sha256 = "sha256-SBIN44URd7cwTCxa3gPgCe4hTnmejmlGMjUElwr19DI=";
 
             finalImageTag = version;
           };
 
-          extraOptions = [
-            "--add-host=host.docker.internal:host-gateway"
-          ];
+          extraOptions = [ "--network=host" ];
 
           volumes = [
             "/data/main/.state/cleanuparr/:/config"
           ];
-
-          ports = [ "${toString port}:${toString port}" ];
 
           environment = {
             TZ = toString config.time.timeZone;

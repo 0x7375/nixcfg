@@ -37,7 +37,6 @@
           auth-default-access = "read-write";
         };
       };
-      networking.firewall.allowedTCPPorts = [ port ];
 
       systemd.services."service-failure-notify@" =
         let

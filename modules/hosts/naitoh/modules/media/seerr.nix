@@ -25,6 +25,7 @@
         package = self.lib.withMainProgram "seerr" mv.latest.seerr;
         openFirewall = true;
         apiKey._secret = config.sops.secrets."seerr/api_key".path;
+        settings.users.localLogin = false;
       };
     };
 }

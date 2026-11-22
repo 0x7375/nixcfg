@@ -33,7 +33,14 @@
           downloadsDir = "/data/shared/downloads";
           stateDir = "/data/main/.state";
           postgres.enable = true;
-          recyclarr.enable = true;
+          recyclarr = {
+            enable = true;
+
+            cleanupUnmanagedProfiles = {
+              enable = true;
+              managedProfiles = [ "KHALITE" ];
+            };
+          };
         };
 
         systemd.tmpfiles.settings."arr-media" =

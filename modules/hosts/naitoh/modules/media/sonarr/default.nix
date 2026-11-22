@@ -2,6 +2,7 @@
   flake.modules.nixos.naitoh =
     {
       config,
+      lib,
       pkgs,
       ...
     }:
@@ -16,16 +17,39 @@
 
       nixflix.recyclarr.config.sonarr.sonarr = {
         media_naming.episodes.rename = true;
+
+        quality_profiles = lib.mkForce [
+          {
+            name = "KHALITE";
+            min_format_score = 0;
+            reset_unmatched_scores.enabled = true;
+
+            upgrade = {
+              allowed = false;
+              until_quality = "Bluray-1080p Remux";
+            };
+
+            qualities = map (name: { inherit name; }) [
+              "WEBDL-1080p"
+              "Bluray-1080p"
+              "HDTV-1080p"
+              "Bluray-1080p Remux"
+              "WEBDL-2160p"
+              "Bluray-2160p"
+              "HDTV-2160p"
+              "Bluray-2160p Remux"
+            ];
+          }
+        ];
+
         custom_formats =
           let
-            profiles = [
-              "Any"
-              "HD - 720p/1080p"
-              "HD-720p"
-              "HD-1080p"
-              "Ultra-HD"
+            assign = score: [
+              {
+                name = "KHALITE";
+                inherit score;
+              }
             ];
-            assign = score: map (name: { inherit name score; }) profiles;
           in
           [
             # Not original language

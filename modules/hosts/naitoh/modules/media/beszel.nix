@@ -28,8 +28,6 @@
         }
       ];
 
-      networking.firewall.allowedTCPPorts = [ port ];
-
       me.hostSecrets."beszel/key" = { };
       # permanent token needs to be generated from the ui
       me.hostSecrets."beszel/token".owner = "beszel-agent";

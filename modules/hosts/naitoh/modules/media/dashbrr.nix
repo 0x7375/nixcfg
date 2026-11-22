@@ -20,8 +20,6 @@
         mode = "0755";
       };
 
-      networking.firewall.allowedTCPPorts = [ port ];
-
       virtualisation.oci-containers.containers.dashbrr =
         let
           name = "ghcr.io/autobrr/dashbrr";

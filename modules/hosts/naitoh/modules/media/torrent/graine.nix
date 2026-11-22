@@ -1,16 +1,11 @@
 {
   flake.modules.nixos.naitoh =
     { config, pkgs, ... }:
-    let
-      inherit (config.me.services.graine) port;
-    in
     {
       me.services.graine = {
         subdomain = "graine";
         port = 3000;
       };
-
-      networking.firewall.allowedTCPPorts = [ port ];
 
       virtualisation.oci-containers.containers.graine =
         let

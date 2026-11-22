@@ -13,10 +13,16 @@
       template = "@guiPassword@";
     in
     {
-      me.services.qui = {
-        subdomain = "torrent";
-        inherit (config.services.qui.settings) port;
-        path = "instances/1";
+      me.services = {
+        qbittorrent = {
+          subdomain = "qbittorrent";
+          port = config.nixflix.torrentClients.qbittorrent.webuiPort;
+        };
+        qui = {
+          subdomain = "torrent";
+          inherit (config.services.qui.settings) port;
+          path = "instances/1";
+        };
       };
 
       me.hostSecrets."qbittorrent/pw_hash".owner = config.services.qbittorrent.user;

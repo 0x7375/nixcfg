@@ -5,8 +5,6 @@
       inherit (config.me.services.attic) port url;
     in
     {
-      networking.firewall.allowedTCPPorts = [ port ];
-
       me.hostSecrets.attic_server_token = { };
       sops.templates."attic.env".content =
         # bash
