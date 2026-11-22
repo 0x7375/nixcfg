@@ -1,3 +1,5 @@
+{ self, ... }:
+
 {
   flake.modules.generic.core =
     {
@@ -34,7 +36,7 @@
         (pkgs.writeShellApplication {
           name = "codex";
           text = ''
-            exec ${lib.getExe mv.latest.codex} \
+            exec ${lib.getExe (self.lib.withMainProgram "codex" mv.latest.codex)} \
               -c "projects={\"$PWD\"={trust_level=\"trusted\"}}" \
               "$@"
           '';
