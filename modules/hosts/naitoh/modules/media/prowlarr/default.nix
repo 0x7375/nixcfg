@@ -28,6 +28,7 @@
       me.hostSecrets."indexers/v3x" = { };
       me.hostSecrets."indexers/rutracker" = { };
       me.hostSecrets."indexers/speedapp" = { };
+      me.hostSecrets."indexers/yggreborn" = { };
 
       networking.enableIPv6 = false;
 
@@ -37,6 +38,7 @@
             "c411"
             "tr4ker"
             "v3x"
+            "yggreborn-api"
           ];
         in
         # bash
@@ -91,6 +93,13 @@
                 {
                   name = "V3X (Custom)";
                   apikey._secret = config.sops.secrets."indexers/v3x".path;
+                  priority = 10;
+                  multilang = true;
+                  multilanguage = 5;
+                }
+                {
+                  name = "YggReborn (API) (Custom)";
+                  passkey._secret = config.sops.secrets."indexers/yggreborn".path;
                   priority = 10;
                   multilang = true;
                   multilanguage = 5;
