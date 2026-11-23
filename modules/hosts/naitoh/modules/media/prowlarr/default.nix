@@ -26,6 +26,7 @@
       me.hostSecrets."indexers/c411" = { };
       me.hostSecrets."indexers/tr4ker" = { };
       me.hostSecrets."indexers/v3x" = { };
+      me.hostSecrets."indexers/rutracker" = { };
 
       networking.enableIPv6 = false;
 
@@ -93,6 +94,17 @@
                   multilang = true;
                   multilanguage = 5;
                 }
+                # not until this is merged ig https://github.com/FlareSolverr/FlareSolverr/pull/1809
+                # (
+                #   (withSolver "RuTracker.org")
+                #   // {
+                #     username = "seldom511";
+                #     password._secret = config.sops.secrets."indexers/rutracker".path;
+                #     russianLetters = true;
+                #     addRussianToTitle = false;
+                #     priority = 20;
+                #   }
+                # )
               ];
           };
         };
