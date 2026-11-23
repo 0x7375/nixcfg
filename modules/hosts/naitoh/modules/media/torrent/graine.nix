@@ -67,6 +67,15 @@
                     hosts = [ "tk.tr4ker.net" ];
                     priority = 10;
                   }
+                  {
+                    name = "SPEEDAPP";
+                    hosts = [
+                      "ramjet.speedapp.io"
+                      "ramjet.speedapp.to"
+                      "ramjet.speedappio.org"
+                    ];
+                    priority = 10;
+                  }
                 ];
               };
             in

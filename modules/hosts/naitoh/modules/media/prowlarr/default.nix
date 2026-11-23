@@ -27,6 +27,7 @@
       me.hostSecrets."indexers/tr4ker" = { };
       me.hostSecrets."indexers/v3x" = { };
       me.hostSecrets."indexers/rutracker" = { };
+      me.hostSecrets."indexers/speedapp" = { };
 
       networking.enableIPv6 = false;
 
@@ -93,6 +94,12 @@
                   priority = 10;
                   multilang = true;
                   multilanguage = 5;
+                }
+                {
+                  name = "SpeedApp.io";
+                  email = "revenge.spiritual345@0xaa.me";
+                  password._secret = config.sops.secrets."indexers/speedapp".path;
+                  priority = 15;
                 }
                 # not until this is merged ig https://github.com/FlareSolverr/FlareSolverr/pull/1809
                 # (
