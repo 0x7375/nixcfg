@@ -46,20 +46,49 @@ def run(args: list[str]) -> dict:
             return exchange(directory, args)
         except (FileNotFoundError, ConnectionRefusedError):
             return {'ok': True, 'data': bw.main(args)}
+    if args[0] == 'open':
+        # A previously installed plugin may have left its older daemon running.
+        # v2.10 does not publish the post-key-prompt stage marker. Upgrade
+        # transparently before launching the unlock, preserving the CLI session.
+        try:
+            info = exchange(directory, ['protocol'])
+            if not info.get('ok') or info.get('data', {}).get('version') != 3:
+                exchange(directory, ['stop'])
+                deadline = time.monotonic() + 2
+                while (directory / 'vault.sock').exists() and time.monotonic() < deadline:
+                    time.sleep(0.03)
+                if (directory / 'vault.sock').exists():
+                    raise bw.VaultError('Old vault helper is still exiting; retry unlock')
+        except (FileNotFoundError, ConnectionRefusedError):
+            pass
     try:
-        return exchange(directory, args)
-    except (FileNotFoundError, ConnectionRefusedError):
-        # Only one daemon can take daemon.lock. Contending launchers wait for it.
-        subprocess.Popen([sys.executable, str(pathlib.Path(__file__).with_name('daemon.py'))],
-                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
-        deadline = time.monotonic() + 2
-        while time.monotonic() < deadline:
-            try:
-                return exchange(directory, args)
-            except (FileNotFoundError, ConnectionRefusedError):
+        response = exchange(directory, args)
+        if (args[0] == 'export' and response.get('ok') is False
+                and response.get('error') == 'Unsupported command'):
+            # Existing Noctalia sessions may still run the previous daemon
+            # after the plugin directory is replaced. Retire it without
+            # locking the CLI, then launch the upgraded backend below.
+            exchange(directory, ['stop'])
+            deadline = time.monotonic() + 2
+            while (directory / 'vault.sock').exists() and time.monotonic() < deadline:
                 time.sleep(0.03)
-        raise bw.VaultError('Private vault helper did not start')
+            if (directory / 'vault.sock').exists():
+                raise bw.VaultError('Old vault helper is still exiting; retry export')
+        else:
+            return response
+    except (FileNotFoundError, ConnectionRefusedError):
+        pass
+    # Only one daemon can take daemon.lock. Contending launchers wait for it.
+    subprocess.Popen([sys.executable, str(pathlib.Path(__file__).with_name('daemon.py'))],
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        try:
+            return exchange(directory, args)
+        except (FileNotFoundError, ConnectionRefusedError):
+            time.sleep(0.03)
+    raise bw.VaultError('Private vault helper did not start')
 
 
 if __name__ == '__main__':

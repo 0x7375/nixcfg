@@ -231,6 +231,42 @@ def redact_list(directory: pathlib.Path) -> list:
     return result
 
 
+def export_plaintext(directory: pathlib.Path, configured_path: str) -> dict:
+    """Export the full vault as an atomic owner-only plaintext JSON file.
+
+    Never put the vault/master password in argv, the reply, or stdout. A failed
+    export leaves the prior export untouched. The setting is trusted user input.
+    """
+    if not isinstance(configured_path, str) or not configured_path.strip() or len(configured_path) > 4096:
+        raise VaultError("Configure a valid export path")
+    if any(ord(char) < 32 for char in configured_path):
+        raise VaultError("Invalid export path")
+    output = pathlib.Path(configured_path).expanduser()
+    if not output.is_absolute():
+        raise VaultError("Export path must be absolute or start with ~/")
+    output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    # This requests a real Bitwarden export, not just cached item JSON.
+    payload = cli(["export", "--format", "json", "--raw"], directory, timeout=52)
+    try:
+        doc = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise VaultError("Bitwarden returned an invalid export") from exc
+    if not isinstance(doc, dict) or not isinstance(doc.get("items"), list):
+        raise VaultError("Bitwarden returned an incomplete export")
+    fd, name = tempfile.mkstemp(prefix=".bitwarden-export-", suffix=".tmp", dir=str(output.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(name, 0o600)
+        os.replace(name, output)
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+    return {"path": str(output)}
+
+
 def generate_totp(seed: str, *, timestamp: int | None = None) -> str:
     """Standard RFC 6238 and Steam Guard TOTP from the unlocked in-RAM item.
 
@@ -514,6 +550,8 @@ def main(args: list[str]) -> object:
         response = edit_item(directory, args[1], json.loads(consume(directory / "request.json")))
     elif op == "create":
         response = create_item(directory, json.loads(consume(directory / "request.json")))
+    elif op == "export":
+        response = export_plaintext(directory, args[1])
     elif op == "sync":
         cli(["sync"], directory, timeout=52)
         response = {"synced": True}

@@ -4,6 +4,7 @@
   flake.modules.nixos.wayland =
     {
       lib,
+      mv,
       pkgs,
       config,
       ...
@@ -227,6 +228,7 @@
             ".config/noctalia"
             ".local/state/noctalia"
             ".config/Bitwarden CLI"
+            ".cache/noctalia-bitwarden/icons"
           ];
         };
 
@@ -335,7 +337,7 @@
           udisks
           ddcutil
           age-plugin-fido2prf
-          bitwarden-cli
+          mv.latest.bitwarden-cli
           wtype
           (pkgs.writeShellScriptBin "fido2-encrypt" ''
             exec ${pkgs.my.fido2-encrypt} \

@@ -1,5 +1,7 @@
 {
   "settings.decrypt_cmd.label": "Security-key decrypt command",
+  "settings.export_out_path.label": "Plaintext export destination",
+  "settings.export_out_path.description": "Writes a complete unencrypted vault JSON file (mode 0600). Keep it on trusted storage.",
   "Command that returns the master password using your security key. Never logged or passed as an argument to bw.": "Command that returns the master password using your security key. Never logged or passed as an argument to bw.",
   "settings.website_icons.label": "Website icons",
   "settings.website_icons.description": "Fetch website icons from Bitwarden's icon server. This shares the stored website hostname with Bitwarden/Fastly. Disabled by default."

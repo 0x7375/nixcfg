@@ -3,7 +3,7 @@
 -- Escape is reserved by Noctalia. Alt+H returns; Ctrl+O opens the editor.
 -- Ctrl+H is left uncaptured so it cannot interfere with text editing.
 -- A focused input receives plain Space normally; on details Space toggles reveal.
--- The service unlocks the vault before showing this panel.
+-- The security-key prompt appears first; the panel animates while bw unlock/list run.
 
 noctalia.setUpdateInterval(1000)
 
@@ -21,6 +21,7 @@ local message = ""
 local query = ""
 local items = {}
 local visible = {}
+local matchedCount = 0
 local selected = 1
 local detail = nil
 local selectedItem = nil
@@ -28,6 +29,7 @@ local entryRows = {}
 local selectedField = 1
 local revealedFields = {} -- plaintext only while this item is open; never persisted
 local nextTotpRefresh = 0 -- only TOTP codes refresh when their time slot changes
+local detailScrollObserved = nil -- real scroll overflow, once reported by Noctalia
 local totpRefreshPending = false
 local draft = nil
 local draftInitial = nil
@@ -45,15 +47,25 @@ local repeatElapsed = 0
 local repeatCount = 0
 local actionBindings = {}
 local BODY_WIDTH = 500
-local LIST_WIDTH = 484
--- Reserve room for the scroll indicator instead of letting it cover edit inputs.
+local SCROLL_GUTTER = 24
+local RESULT_ICON_WIDTH = 38
+local ICON_BATCH_SIZE = 12 -- background batches; exhaust all 100 displayed results
+-- Scrollbars are drawn by Noctalia. Reserve their gutter only when content
+-- needs scrolling; avoid a permanent blank strip beside short lists.
 local EDIT_SCROLL_PADDING = 8
-local EDIT_SCROLL_GUTTER = 16
-local EDIT_FIELD_WIDTH = BODY_WIDTH - 2 * EDIT_SCROLL_PADDING - EDIT_SCROLL_GUTTER
+local editFieldWidth = BODY_WIDTH - 2 * EDIT_SCROLL_PADDING
+local function scrollContentWidth(overflow)
+  return BODY_WIDTH - (if overflow then SCROLL_GUTTER else 0)
+end
+local panelShown = false
+local spinnerFrame = 1
+local spinnerElapsed = 0
 local openGeneration = 0
 local iconPaths = {}
 local iconAttempted = {}
 local iconsRunning = false
+local iconRetryAtMs = 0
+local iconFailureNotified = false
 local useWebsiteIcons = false
 local render
 local fetchIcons
@@ -172,6 +184,7 @@ local function filterItems()
       return (a.item.name or "") < (b.item.name or "")
     end)
   end
+  matchedCount = #scored
   visible = {}
   for i, entry in ipairs(scored) do
     if i > 100 then break end
@@ -184,6 +197,7 @@ end
 loadDetail = function(id)
   if mode == "detail" and selectedItem == id and (openingItem or detail ~= nil) then return end
   selectedItem = id
+  detailScrollObserved = nil
   revealedFields = {}
   nextTotpRefresh = 0
   totpRefreshPending = false
@@ -218,6 +232,7 @@ local function applyOpen(data)
   else
     items = {}
     visible = {}
+    matchedCount = 0
   end
 end
 
@@ -277,7 +292,7 @@ end
 
 local function activateField(field)
   if field == nil then return end
-  if field.key:sub(1, 4) == "uri:" then
+  if not field.hidden and field.key:sub(1, 4) == "uri:" then
     openWebsite(field.value)
   else
     copyField(field.key)
@@ -301,6 +316,7 @@ local function back()
     draftInitial = nil
     draftChanged = false
   elseif mode == "detail" then
+    detailScrollObserved = nil
     revealedFields = {}
     nextTotpRefresh = 0
     totpRefreshPending = false
@@ -314,6 +330,7 @@ local function back()
     return
   end
   render()
+  if mode == "search" and fetchIcons ~= nil then fetchIcons() end
 end
 
 local function startEdit()
@@ -486,6 +503,23 @@ local function sync()
   end, true)
 end
 
+local function exportVault()
+  if busy or saving or vault ~= "unlocked" then return end
+  local path = noctalia.getConfig("export_out_path")
+  if type(path) ~= "string" or noctalia.string.trim(path) == "" then
+    setError("Configure a plaintext export path in plugin settings")
+    render()
+    return
+  end
+  -- The export destination is the only user-supplied command argument. No
+  -- plaintext vault data or master password crosses process argv.
+  call({ "export", path }, function(data)
+    if type(data) == "table" and type(data.path) == "string" then
+      noctalia.notify("Bitwarden", "Plaintext vault exported to " .. data.path)
+    end
+  end, true)
+end
+
 local function header()
   local title = if mode == "detail" or mode == "edit" then (if detail then shorten(detail.name or "Item", 36) else "Item") else "Bitwarden"
   local controls = {}
@@ -496,8 +530,9 @@ local function header()
   end
   table.insert(controls, ui.label({ text = title, fontSize = 18, fontWeight = "bold", flexGrow = 1, maxLines = 1 }))
   if mode == "search" and vault == "unlocked" then
-    table.insert(controls, ui.button({ glyph = "refresh", variant = "ghost", tooltip = "Sync", enabled = true, onClick = sync }))
-    table.insert(controls, ui.button({ glyph = "lock", variant = "ghost", tooltip = "Lock vault", enabled = true, onClick = lock }))
+    table.insert(controls, ui.button({ glyph = "refresh", variant = "ghost", tooltip = "Sync", enabled = not busy, onClick = sync }))
+    table.insert(controls, ui.button({ glyph = "download", variant = "ghost", tooltip = "Export plaintext JSON", enabled = not busy, onClick = exportVault }))
+    table.insert(controls, ui.button({ glyph = "lock", variant = "ghost", tooltip = "Lock vault", enabled = not busy, onClick = lock }))
   elseif mode == "detail" and detail ~= nil then
     if detail.canAutotype then
       table.insert(controls, ui.button({ glyph = "keyboard", variant = "ghost", tooltip = "Autotype · Ctrl+T", enabled = true, onClick = autotype }))
@@ -516,13 +551,24 @@ end
 -- Only the panel and its root have a fixed height; the active view and its
 -- scrollable region divide the remaining space using flexGrow/minHeight.
 local function searchContent()
+  if vault == "loading" then
+    local phase = noctalia.state.get("vault_loading_stage") or "Unlocking vault"
+    return ui.column({ key = "view-loading", width = BODY_WIDTH,
+      flexGrow = 1, minHeight = 0, gap = 14, align = "center", justify = "center" }, {
+      -- Animated by onFrameTick (~10 FPS), not the service's 1s timer.
+      -- A native indeterminate spinner is not available in plugin API 43.
+      ui.label({ text = ({ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" })[spinnerFrame],
+        fontSize = 40, color = "primary", textAlign = "center" }),
+      ui.label({ text = phase, fontSize = 15, textAlign = "center" }),
+    })
+  end
   if vault ~= "unlocked" then
     return ui.column({ key = "view-locked", width = BODY_WIDTH,
       flexGrow = 1, minHeight = 0, gap = 14, align = "center", justify = "center" }, {
       ui.glyph({ name = "lock", size = 30, color = "primary" }),
-      ui.label({ text = if vault == "unauthenticated" then "Log in with bw CLI first" else "Vault locked", fontSize = 15 }),
+      ui.label({ text = if message ~= "" then "Unlock failed" elseif vault == "unauthenticated" then "Log in with bw CLI first" else "Vault locked", fontSize = 15 }),
       ui.button({ text = "Unlock", variant = "primary", onClick = function()
-        noctalia.state.set("vault_ready", false)
+        -- Close the locked view before invoking the external key prompt.
         panel.close()
         noctalia.state.set("unlock_request", noctalia.nowMs())
       end }),
@@ -530,24 +576,28 @@ local function searchContent()
   end
 
   local rows = {}
+  -- Search rows are roughly 55px + 6px gap; six fit in the ~420px list.
+  -- Short lists fit without a scrollbar: use the full panel width for them.
+  local rowWidth = scrollContentWidth(#visible > 6)
   for i, item in ipairs(visible) do
     local current = item
     local index = i
     local icon = nil
     if useWebsiteIcons and iconPaths[current.id] ~= nil then
       icon = ui.image({ key = "site-icon-" .. current.id, path = iconPaths[current.id],
-        width = 20, height = 20, radius = 4, fit = "contain" })
+        width = 24, height = 24, radius = 5, fit = "contain" })
     else
-      icon = ui.glyph({ name = if current.type == 1 then "user" elseif current.type == 2 then "notes" elseif current.type == 3 then "credit-card" else "id", size = 18, color = "primary" })
+      icon = ui.glyph({ name = if current.type == 1 then "user" elseif current.type == 2 then "notes" elseif current.type == 3 then "credit-card" else "id", size = 22, color = "primary" })
     end
-    table.insert(rows, ui.row({ key = "hit-" .. tostring(i), width = LIST_WIDTH,
-      padding = 11, radius = 10, gap = 10, align = "center",
+    table.insert(rows, ui.row({ key = "hit-" .. tostring(i), width = rowWidth,
+      padding = 9, radius = 10, gap = 12, align = "center",
       fill = if i == selected then "primary_container" else "surface_container",
       onClick = function()
         selected = index
         loadDetail(current.id)
       end }, {
-        icon,
+        ui.row({ width = RESULT_ICON_WIDTH, height = 36,
+          align = "center", justify = "center" }, { icon }),
         ui.column({ gap = 3, flexGrow = 1 }, {
           ui.label({ text = shorten(current.name, 90), fontWeight = "medium", maxLines = 1 }),
           ui.label({ text = shorten(current.subtitle or "", 90), fontSize = 12, color = "on_surface_variant", maxLines = 1 }),
@@ -573,7 +623,8 @@ local function searchContent()
       -- onKey handles confirmation; avoid a second activation via onSubmit.
     }),
     ui.row({ key = "search-count", width = BODY_WIDTH, height = 20, align = "center" }, {
-      ui.label({ text = tostring(#visible) .. " results", color = "on_surface_variant", fontSize = 12 }),
+      ui.label({ text = tostring(#visible) .. (if matchedCount > #visible then "+" else "") .. " results",
+        color = "on_surface_variant", fontSize = 12 }),
     }),
     ui.scroll({ key = "search-scroll", width = BODY_WIDTH, flexGrow = 1,
       gap = 6, align = "stretch", justify = "start",
@@ -589,30 +640,25 @@ local function detailsContent()
     })
   end
   local rows = {}
+  -- The actual scrollbar is an overlay inside ui.scroll. v2.9 only reserved
+  -- a gutter for >7 rows, but 6 wrapped fields can already exceed the viewport.
+  -- Compute an upper bound including possible second value lines; leave room
+  -- for the track on any likely-overflowing detail list.
+  local fieldExtent = 0
+  for _, field in ipairs(entryRows) do
+    local value = revealedFields[field.key] or field.value or ""
+    fieldExtent += if #value > 48 then 90 else 76
+  end
+  if #entryRows > 1 then fieldExtent += (#entryRows - 1) * 7 end
+  local detailsOverflow = if detailScrollObserved ~= nil then detailScrollObserved else fieldExtent > 440
+  local rowWidth = scrollContentWidth(detailsOverflow)
   for i, field in ipairs(entryRows) do
     local current = field
     local index = i
-    -- Keep the copy/open target and the eye button as siblings. Nesting the
-    -- button in a clickable row risks activating the row as well (copying a
-    -- password when the user only wanted to reveal it).
-    local rightAction
-    if current.hidden then
-      local isRevealed = revealedFields[current.key] ~= nil
-      rightAction = ui.button({ key = "reveal-" .. current.key,
-        glyph = if isRevealed then "eye-off" else "eye",
-        tooltip = if isRevealed then "Hide field" else "Reveal field",
-        variant = "ghost", width = 34, height = 34, enabled = not saving,
-        onClick = function()
-          selectedField = index
-          revealField(current)
-        end })
-    else
-      rightAction = ui.glyph({ name = if current.key:sub(1, 4) == "uri:" then "external-link" else "copy",
-        size = 17, color = "primary" })
-    end
-    table.insert(rows, ui.row({ key = "field-" .. tostring(i), width = LIST_WIDTH,
-      padding = 8, radius = 10, gap = 8, align = "center",
-      fill = if i == selectedField then "primary_container" else "surface_container" }, {
+    -- Keep all field actions as sibling icon buttons. The flexible field text
+    -- stays on the left, while reveal (when applicable) and copy/open align
+    -- to the right. None of these actions is nested inside another handler.
+    local buttons = {
       ui.row({ key = "field-action-" .. current.key, flexGrow = 1, minWidth = 0,
         padding = 4, align = "center", onClick = function()
           selectedField = index
@@ -624,8 +670,30 @@ local function detailsContent()
             maxLines = 2, fontWeight = "medium" }),
         }),
       }),
-      rightAction,
-    }))
+    }
+    if current.hidden then
+      local isRevealed = revealedFields[current.key] ~= nil
+      table.insert(buttons, ui.button({ key = "reveal-" .. current.key,
+        glyph = if isRevealed then "eye-off" else "eye",
+        tooltip = if isRevealed then "Hide field" else "Reveal field",
+        variant = "ghost", width = 34, height = 34, enabled = not saving,
+        onClick = function()
+          selectedField = index
+          revealField(current)
+        end }))
+    end
+    local isWebsite = not current.hidden and current.key:sub(1, 4) == "uri:"
+    table.insert(buttons, ui.button({ key = "action-" .. current.key,
+      glyph = if isWebsite then "external-link" else "copy",
+      tooltip = if isWebsite then "Open website" else "Copy field",
+      variant = "ghost", width = 34, height = 34, enabled = not saving,
+      onClick = function()
+        selectedField = index
+        activateField(current)
+      end }))
+    table.insert(rows, ui.row({ key = "field-" .. tostring(i), width = rowWidth,
+      padding = 8, radius = 10, gap = 8, align = "center",
+      fill = if i == selectedField then "primary_container" else "surface_container" }, buttons))
   end
   if #rows == 0 then
     table.insert(rows, ui.label({ text = "No fields", color = "on_surface_variant" }))
@@ -637,7 +705,16 @@ local function detailsContent()
   end
   table.insert(children, ui.scroll({ key = "detail-scroll", width = BODY_WIDTH,
     flexGrow = 1, gap = 7, align = "stretch", justify = "start",
-    revealKey = "field-" .. tostring(selectedField) }, rows))
+    revealKey = "field-" .. tostring(selectedField),
+    onScroll = function(_offset, maximum)
+      -- Unlike a count threshold, maxOffset reflects actual wrapped content
+      -- and host layout. This also removes the gutter for non-scrolling items.
+      local overflow = (tonumber(maximum) or 0) > 1
+      if overflow ~= detailScrollObserved then
+        detailScrollObserved = overflow
+        render()
+      end
+    end }, rows))
   return ui.column({ key = "view-detail", width = BODY_WIDTH, flexGrow = 1,
     minHeight = 0, gap = 8, align = "stretch", justify = "start" }, children)
 end
@@ -646,10 +723,10 @@ local function editInput(label, name, opt)
   local options = opt or {}
   editInputs += 1
   local index = editInputs
-  return ui.column({ width = EDIT_FIELD_WIDTH, gap = 5, key = "group-" .. name }, {
+  return ui.column({ width = editFieldWidth, gap = 5, key = "group-" .. name }, {
     ui.label({ text = label, fontSize = 12, color = "on_surface_variant" }),
     ui.input({
-      width = EDIT_FIELD_WIDTH, enabled = true,
+      width = editFieldWidth, enabled = true,
       key = "edit-" .. editKey .. "-" .. name .. (if index == editFocus then "-focused-" .. editFocusSerial else ""),
       value = options.initial or "", placeholder = options.placeholder or "",
       password = options.password or false, multiline = options.multiline or false,
@@ -672,6 +749,8 @@ end
 local function editContent()
   if draft == nil then return ui.label({ text = "Preparing editor…" }) end
   editInputs = 0
+  editFieldWidth = BODY_WIDTH - 2 * EDIT_SCROLL_PADDING
+    - (if mode == "edit" and #(draft.custom or {}) > 0 then SCROLL_GUTTER else 0)
   local fields = {
     editInput("Name", "name", { initial = draft.name or "" }),
   }
@@ -799,8 +878,17 @@ end
 -- Captured keys do not repeat until plugin API 57. Implement the normal delay
 -- and rate via the stable frame-tick API available in Noctalia 5.4.
 function onFrameTick(deltaMs)
+  local delta = math.max(0, math.min(100, tonumber(deltaMs) or 16))
+  if panelShown and vault == "loading" then
+    spinnerElapsed += delta
+    if spinnerElapsed >= 90 then
+      spinnerElapsed = spinnerElapsed % 90
+      spinnerFrame = spinnerFrame % 10 + 1
+      render()
+    end
+  end
   if heldKey == nil then return end
-  repeatElapsed += math.max(0, math.min(100, tonumber(deltaMs) or 16))
+  repeatElapsed += delta
   if repeatElapsed < 340 then return end
   local expected = math.floor((repeatElapsed - 340) / 65) + 1
   if expected <= repeatCount then return end
@@ -813,13 +901,15 @@ end
 -- Optional website icons are fetched out of band. No remote requests unless
 -- explicitly enabled; Noctalia ui.image only accepts local files.
 fetchIcons = function()
-  if not useWebsiteIcons or iconsRunning or vault ~= "unlocked" or mode ~= "search" then return end
+  if not useWebsiteIcons or iconsRunning or vault ~= "unlocked" or mode ~= "search"
+    or noctalia.nowMs() < iconRetryAtMs then return end
   local ids = {}
-  for i, item in ipairs(visible) do
-    if i > 20 then break end
+  -- Process the entire currently displayed list, not just the first page.
+  -- The completion callback schedules the next batch without blocking the UI.
+  for _, item in ipairs(visible) do
     if not iconAttempted[item.id] then
       table.insert(ids, item.id)
-      if #ids == 20 then break end
+      if #ids == ICON_BATCH_SIZE then break end
     end
   end
   if #ids == 0 then return end
@@ -833,19 +923,56 @@ fetchIcons = function()
   local started = noctalia.runAsync(argv, function(result)
     if generation ~= openGeneration then return end
     iconsRunning = false
-    if result.exitCode == 0 and not result.timedOut then
-      local data = noctalia.json.decode(result.stdout or "")
-      if type(data) == "table" and type(data.icons) == "table" then
+    local data = nil
+    if result.exitCode == 0 and not result.timedOut and not result.stdoutTruncated then
+      data = noctalia.json.decode(result.stdout or "")
+    end
+    if type(data) ~= "table" or type(data.error) == "string" then
+      -- Failed cache/network helper requests must not silently mark every
+      -- entry as fetched. Keep the panel responsive and retry on next open.
+      if not iconFailureNotified then
+        noctalia.log("Bitwarden icons: " .. (if type(data) == "table" and data.error then data.error else "Icon helper failed or timed out"))
+        iconFailureNotified = true
+      end
+      iconRetryAtMs = noctalia.nowMs() + 30000
+      for _, id in ipairs(ids) do iconAttempted[id] = nil end
+      return
+    end
+    if type(data.warning) == "string" and not iconFailureNotified then
+      noctalia.log("Bitwarden icons: " .. data.warning)
+      iconFailureNotified = true
+    end
+    if type(data.stats) == "table" and (tonumber(data.stats.eligible) or 0) > 0
+      and (tonumber(data.stats.available) or 0) == 0 and not iconFailureNotified then
+      noctalia.log("Bitwarden icons: no images available from eligible hosts. Run icons.py --diagnose.")
+      iconFailureNotified = true
+    end
+    if type(data.icons) == "table" then
+        local cacheDir = data.cache_dir
         for id, path in pairs(data.icons) do
-          if type(path) == "string" and path:sub(1, #(runtimeDir .. "/icons/")) == runtimeDir .. "/icons/" then
-            iconPaths[id] = path
+          -- Accept only hashed PNGs in the icon worker's private cache.
+          if type(path) == "string" and type(cacheDir) == "string"
+            and path:sub(1, #cacheDir + 1) == cacheDir .. "/" then
+            local filename = path:sub(#cacheDir + 2)
+            local digest = filename:match("^([0-9a-f]+)%.png$")
+            if digest ~= nil and #digest == 64 then iconPaths[id] = path end
           end
         end
       end
+    render() -- newly available icons replace placeholder glyphs in this batch
+    if panelShown and vault == "unlocked" and mode == "search" then
+      fetchIcons() -- process the next batch until all displayed items are checked
     end
-    render()
   end, 25000)
-  if not started then iconsRunning = false end
+  if not started then
+    iconsRunning = false
+    iconRetryAtMs = noctalia.nowMs() + 30000
+    for _, id in ipairs(ids) do iconAttempted[id] = nil end
+    if not iconFailureNotified then
+      noctalia.log("Bitwarden icons: unable to start icon worker")
+      iconFailureNotified = true
+    end
+  end
 end
 
 local function resetUnlockedState()
@@ -857,6 +984,7 @@ local function resetUnlockedState()
   detail = nil
   entryRows = {}
   revealedFields = {}
+  detailScrollObserved = nil
   nextTotpRefresh = 0
   totpRefreshPending = false
   draft = nil
@@ -869,30 +997,23 @@ local function resetUnlockedState()
   searchKey += 1
 end
 
-function onOpen(_context)
-  openGeneration += 1
-  heldKey = nil
-  panel.setNeedsFrameTick(false)
-  readBindings()
-  local ready = noctalia.state.get("vault_ready")
-  if ready ~= true then
-    -- Close immediately so only the real security-key prompt appears. Once
-    -- unlocked the service opens the populated panel automatically.
-    panel.close()
-    noctalia.state.set("unlock_request", noctalia.nowMs())
-    return
-  end
+local function showUnlockedPanel()
+  if not panelShown then return end
   runtimeDir = noctalia.state.get("vault_runtime") or ""
   if runtimeDir == "" then
-    panel.close()
-    noctalia.state.set("unlock_request", noctalia.nowMs())
+    vault = "locked"
+    message = "Private runtime is unavailable"
+    render()
     return
   end
   requestPath = runtimeDir .. "/request.json"
   local epoch = tonumber(noctalia.state.get("vault_epoch")) or 0
-  if epoch ~= knownEpoch then
+  local freshEpoch = epoch ~= knownEpoch
+  if freshEpoch then
     iconPaths = {}
     iconAttempted = {}
+    iconRetryAtMs = 0
+    iconFailureNotified = false
     resetUnlockedState()
     knownEpoch = epoch
     items = noctalia.state.get("vault_initial_items") or {}
@@ -901,14 +1022,18 @@ function onOpen(_context)
   if type(items) ~= "table" then items = {} end
   useWebsiteIcons = noctalia.getConfig("website_icons") == true
   vault = "unlocked"
+  if heldKey == nil then panel.setNeedsFrameTick(false) end
   busy = false
   saving = false
   message = ""
-  noctalia.state.set("panel_visible", true)
   render()
   fetchIcons()
-  -- Validation happens in the background. Never show a loading intermediary
-  -- on a warm open, and keep the current search/detail/editor selection.
+  -- Immediately after a fresh unlock, the service already fetched all items.
+  -- Reopen a warm cache and validate it asynchronously without blocking UI.
+  if freshEpoch and tonumber(noctalia.state.get("vault_opened_at")) ~= nil
+    and noctalia.nowMs() - tonumber(noctalia.state.get("vault_opened_at")) < 10000 then
+    return
+  end
   call({ "open" }, function(data)
     if data.status == "unlocked" then
       applyOpen(data)
@@ -932,12 +1057,64 @@ function onOpen(_context)
   end, false)
 end
 
+function onOpen(_context)
+  openGeneration += 1
+  panelShown = true
+  heldKey = nil
+  readBindings()
+  noctalia.state.set("panel_visible", true)
+  if noctalia.state.get("vault_ready") == true then
+    panel.setNeedsFrameTick(false)
+    showUnlockedPanel()
+    return
+  end
+  if noctalia.state.get("vault_show_loading") == true then
+    -- The security-key prompt has completed. Animate while bw finishes.
+    vault = "loading"
+    mode = "search"
+    message = ""
+    spinnerFrame = 1
+    spinnerElapsed = 0
+    render()
+    panel.setNeedsFrameTick(true)
+    return
+  end
+  -- A direct `panel-toggle` cannot be intercepted before Noctalia creates
+  -- the surface. Close it immediately instead of covering the key prompt;
+  -- the service will reopen it at the correct stage. Prefer the service IPC.
+  panel.close()
+  if noctalia.state.get("vault_loading") ~= true then
+    noctalia.state.set("unlock_request", noctalia.nowMs())
+  end
+end
+
+noctalia.state.watch("vault_ready", function(ready)
+  if panelShown and ready == true and vault ~= "unlocked" then
+    showUnlockedPanel()
+  end
+end)
+
+noctalia.state.watch("vault_loading_stage", function(_stage)
+  if panelShown and vault == "loading" then render() end
+end)
+
+noctalia.state.watch("vault_loading", function(loading)
+  if panelShown and loading == false and noctalia.state.get("vault_ready") ~= true then
+    vault = "locked"
+    panel.setNeedsFrameTick(false)
+    message = noctalia.state.get("vault_error") or "Unlock failed"
+    render()
+  end
+end)
+
 function onClose()
+  panelShown = false
   noctalia.state.set("panel_visible", false)
   openGeneration += 1 -- invalidate pending view callbacks
   heldKey = nil
   iconsRunning = false
   iconAttempted = {} -- an in-flight fetch may have been invalidated by this close
+  iconRetryAtMs = 0 -- permit retry after reopening if a prior worker failed
   panel.setNeedsFrameTick(false)
   revealedFields = {} -- hide revealed fields when closing the panel
   nextTotpRefresh = 0
@@ -954,6 +1131,7 @@ end
 -- controls visibility. The TOTP *value* refreshes when a new code is due,
 -- without changing the revealed state.
 function update()
+  if vault == "loading" then return end
   if mode ~= "detail" or detail == nil or revealedFields.totp == nil
     or totpRefreshPending or noctalia.nowMs() < nextTotpRefresh then return end
   local id = detail.id

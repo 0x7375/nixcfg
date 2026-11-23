@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Private, single-user Unix-socket vault cache.
+"""Private, single-user Unix-socket vault cache with native Bitwarden serve.
 
 Keeps plaintext items only in this process's memory, not on disk or in panel state.
 The socket is not exposed over TCP. Same-UID processes are not a security boundary.
@@ -20,6 +20,7 @@ import time
 from typing import Any
 
 import backend as bw
+import bw_serve
 
 MAX_MESSAGE = 1024 * 1024
 SOCKET_NAME = 'vault.sock'
@@ -50,15 +51,42 @@ class Vault:
         self.items: dict[str, dict] = {}
         self.loaded = False
         self.stop = False
+        self.server = bw_serve.Server(directory)
 
     def clear(self) -> None:
         self.items.clear()
         self.loaded = False
 
+    def shutdown(self, *, lock: bool = True) -> None:
+        if lock and self.server.process is not None and self.server.process.poll() is None:
+            try:
+                self.server.request('POST', '/lock', timeout=5)
+            except bw.VaultError:
+                pass
+        self.server.stop()
+        bw.session_path(self.directory).unlink(missing_ok=True)
+        self.clear()
+
+    def expire(self) -> bool:
+        path = bw.session_path(self.directory)
+        if not path.exists():
+            if self.server.process is not None:
+                self.shutdown()
+            return False
+        if time.time() - path.stat().st_mtime < bw.SESSION_TTL:
+            return False
+        self.shutdown()
+        return True
+
     def check(self) -> None:
-        if bw.expire(self.directory) or not bw.session_path(self.directory).exists():
+        if self.expire() or not bw.session_path(self.directory).exists():
             self.clear()
             raise bw.VaultError('Vault locked')
+        if self.server.process is None or self.server.process.poll() is not None:
+            # Restarted daemon, or `bw serve` crashed. Never trust the old
+            # in-memory cache while the API has lost its unlocked session.
+            self.clear()
+            raise bw.VaultError('Bitwarden API stopped; unlock again')
 
     def list_items(self) -> list:
         return sorted((summary(item) for item in self.items.values() if item.get('name')),
@@ -66,7 +94,7 @@ class Vault:
 
     def reload(self) -> None:
         self.check()
-        result = json.loads(bw.cli(['list', 'items'], self.directory, timeout=52))
+        result = bw_serve.result_data(self.server.request('GET', '/list/object/items', timeout=45))
         if not isinstance(result, list):
             raise bw.VaultError('Invalid vault response')
         updated = {item['id']: item for item in result if isinstance(item, dict) and item.get('id')}
@@ -83,78 +111,111 @@ class Vault:
         return entry
 
     def open(self) -> dict:
-        # A warm vault is returned without invoking bw, including on panel reopen.
-        if bw.session_path(self.directory).exists():
-            try:
-                self.check()
-                if not self.loaded:
-                    self.reload()
-                bw.touch(self.directory)
-                (self.directory / 'unlock.cmd').unlink(missing_ok=True)
-                return {'status': 'unlocked', 'items': self.list_items()}
-            except bw.VaultError:
-                # Stale session (e.g. after a CLI logout): try the normal unlock.
-                bw.session_path(self.directory).unlink(missing_ok=True)
-                self.clear()
-
+        stage = self.directory / 'unlock.stage'
+        stage.unlink(missing_ok=True)
         unlock_file = self.directory / 'unlock.cmd'
-        if not unlock_file.exists():
-            state = json.loads(bw.cli(['status'], self.directory, session=False, timeout=17))
-            actual = state.get('status')
-            self.clear()
-            return {'status': 'unauthenticated' if actual == 'unauthenticated' else 'locked', 'items': []}
+        try:
+            # On a warm reopen the Python cache is sufficient; no CLI requests.
+            if bw.session_path(self.directory).exists() and self.server.process is not None:
+                try:
+                    self.check()
+                    if not self.loaded:
+                        self.reload()
+                    bw.touch(self.directory)
+                    unlock_file.unlink(missing_ok=True)
+                    return {'status': 'unlocked', 'items': self.list_items()}
+                except bw.VaultError:
+                    self.shutdown()
 
-        # Cold start: skip 'bw status' when an unlock command is available.
-        # bw unlock itself validates the account's CLI login state.
-        command = bw.consume(unlock_file).strip()
-        if not command:
-            raise bw.VaultError('Decrypt command not configured')
-        try:
-            result = subprocess.run(['/bin/sh', '-c', command], capture_output=True,
-                                    text=True, timeout=40, check=False)
-        except subprocess.TimeoutExpired as exc:
-            raise bw.VaultError('Security-key command timed out') from exc
-        if result.returncode:
-            raise bw.VaultError('Security-key command failed or was cancelled')
-        password = result.stdout.rstrip('\r\n')
-        if not password:
-            raise bw.VaultError('Security-key command returned no password')
-        token = bw.cli(['unlock', '--passwordfile', '/dev/stdin', '--raw'], self.directory,
-                       stdin=password + '\n', session=False, timeout=20).strip()
-        password = ''
-        if not token or any(c.isspace() for c in token):
-            raise bw.VaultError('Bitwarden did not return a session')
-        bw.private_replace(bw.session_path(self.directory), token)
-        try:
+            # On a daemon restart, try existing BW_SESSION in the persistent
+            # serve process. Never silently expose an old plaintext cache.
+            if bw.session_path(self.directory).exists():
+                try:
+                    self.server.start()
+                    self.server.ready()
+                    self.reload()
+                    bw.touch(self.directory)
+                    unlock_file.unlink(missing_ok=True)
+                    return {'status': 'unlocked', 'items': self.list_items()}
+                except bw.VaultError:
+                    self.shutdown()
+
+            if not unlock_file.exists():
+                # Login remains an explicit CLI setup step. Avoid calling
+                # bw status here: it takes ~2.5s on the user's installation.
+                self.clear()
+                return {'status': 'locked', 'items': []}
+
+            # Start the Node CLI *before* the external security-key prompt.
+            # Node's startup cost is overlapped with user authentication.
+            self.server.start()
+            command = bw.consume(unlock_file).strip()
+            if not command:
+                raise bw.VaultError('Decrypt command not configured')
+            try:
+                result = subprocess.run(['/bin/sh', '-c', command], capture_output=True,
+                                        text=True, timeout=40, check=False)
+            except subprocess.TimeoutExpired as exc:
+                raise bw.VaultError('Security-key command timed out') from exc
+            if result.returncode:
+                raise bw.VaultError('Security-key command failed or was cancelled')
+            password = result.stdout.rstrip('\r\n')
+            if not password:
+                raise bw.VaultError('Security-key command returned no password')
+            # Only after the external prompt has finished, show the spinner.
+            bw.private_replace(stage, 'key-prompt-complete')
+            self.server.ready(timeout=14)
+            started = time.monotonic_ns()
+            try:
+                outcome = self.server.request('POST', '/unlock', {'password': password}, timeout=22)
+            finally:
+                password = ''
+            unlock_ms = (time.monotonic_ns() - started) // 1_000_000
+            # The API usually returns a session in data.raw. Preserve it for
+            # infrequent operations without REST equivalents (e.g. JSON export).
+            token = None
+            if isinstance(outcome, dict):
+                token = outcome.get('raw') or outcome.get('session')
+                if not token and isinstance(outcome.get('data'), dict):
+                    token = outcome['data'].get('raw')
+            if not isinstance(token, str) or not token or any(c.isspace() for c in token):
+                raise bw.VaultError('Bitwarden serve did not return a CLI session')
+            bw.private_replace(bw.session_path(self.directory), token)
+            started = time.monotonic_ns()
             self.reload()
+            list_ms = (time.monotonic_ns() - started) // 1_000_000
+            bw.touch(self.directory)
+            try:
+                bw.private_replace(self.directory / 'startup-timings.json',
+                                   json.dumps({'bw_unlock_ms': unlock_ms,
+                                               'bw_list_items_ms': list_ms,
+                                               'transport': 'unix-serve'}))
+            except OSError:
+                pass
+            return {'status': 'unlocked', 'items': self.list_items()}
         except Exception:
-            self.clear()
+            # Never leave an unlocked API process behind after an aborted flow.
+            self.shutdown()
             raise
-        bw.touch(self.directory)
-        return {'status': 'unlocked', 'items': self.list_items()}
+        finally:
+            stage.unlink(missing_ok=True)
 
     def handle(self, args: list[str]) -> Any:
         if not args or not isinstance(args, list) or any(not isinstance(a, str) for a in args):
             raise bw.VaultError('Invalid command')
         op = args[0]
+        if op == 'protocol':
+            return {'version': 3}
         if op == 'stop':
             self.stop = True
-            self.clear()
+            self.shutdown()
             return {'stopping': True}
         if op == 'open':
             return self.open()
         if op == 'expire':
-            expired = bw.expire(self.directory)
-            if expired or not bw.session_path(self.directory).exists():
-                self.clear()
-            return {'expired': expired}
+            return {'expired': self.expire()}
         if op == 'lock':
-            try:
-                if bw.session_path(self.directory).exists():
-                    bw.cli(['lock'], self.directory, timeout=17)
-            finally:
-                bw.session_path(self.directory).unlink(missing_ok=True)
-                self.clear()
+            self.shutdown()
             return {'status': 'locked'}
         self.check()
         if op == 'list':
@@ -190,7 +251,7 @@ class Vault:
                     result = {'value': bw.generate_totp(seed)}
                 except bw.VaultError:
                     # Preserve Bitwarden-specific formats through the official CLI.
-                    result = {'value': bw.cli(['get', 'totp', bw.item_id(args[1])], self.directory).strip()}
+                    result = {'value': bw_serve.result_data(self.server.request('GET', '/object/totp/' + bw.item_id(args[1])))}
             else:
                 result = {'value': bw.get_field(item, args[2])}
         elif op == 'reveal':
@@ -200,7 +261,7 @@ class Vault:
                 try:
                     result = {'value': bw.generate_totp(seed)}
                 except bw.VaultError:
-                    result = {'value': bw.cli(['get', 'totp', bw.item_id(args[1])], self.directory).strip()}
+                    result = {'value': bw_serve.result_data(self.server.request('GET', '/object/totp/' + bw.item_id(args[1])))}
             else:
                 result = {'value': bw.get_field(item, args[2])}
         elif op == 'edit':
@@ -209,17 +270,14 @@ class Vault:
             if payload.get('revision') != before.get('revisionDate'):
                 raise bw.VaultError('Item changed since opening; sync before editing')
             changed = bw.patch_item(copy.deepcopy(before), payload.get('changes'))
-            import base64
-            encoded = base64.b64encode(json.dumps(changed, ensure_ascii=False, separators=(',', ':')).encode()).decode()
-            output = bw.cli(['edit', 'item', bw.item_id(args[1])], self.directory, stdin=encoded + '\n', timeout=52)
-            try:
-                updated = json.loads(output)
-                if not isinstance(updated, dict) or updated.get('id') != before['id']:
-                    raise ValueError('No updated item returned')
-            except (ValueError, TypeError):
-                # Do not assume a revision; a fresh get is required when the CLI
-                # returns no usable JSON.
-                updated = bw.load_item(self.directory, args[1])
+            output = self.server.request('PUT', '/object/item/' + bw.item_id(args[1]),
+                                         changed, timeout=45)
+            updated = bw_serve.result_data(output)
+            if not isinstance(updated, dict) or updated.get('id') != before['id']:
+                # GET is authoritative; the list endpoint may lag after edits.
+                updated = bw_serve.result_data(self.server.request('GET', '/object/item/' + bw.item_id(args[1])))
+            if not isinstance(updated, dict) or updated.get('id') != before['id']:
+                raise bw.VaultError('Bitwarden edit succeeded, but the item could not be reloaded')
             self.items[updated['id']] = updated
             result = {'detail': bw.describe(updated), 'summary': summary(updated)}
         elif op == 'create':
@@ -234,8 +292,12 @@ class Vault:
                 updated = bw.load_item(self.directory, info['id'])
             self.items[updated['id']] = updated
             result = {'detail': bw.describe(updated), 'summary': summary(updated)}
+        elif op == 'export':
+            # Only the configured destination path is supplied by the panel.
+            # Export uses the existing CLI session; no second key prompt.
+            result = bw.export_plaintext(self.directory, args[1])
         elif op == 'sync':
-            bw.cli(['sync'], self.directory, timeout=52)
+            self.server.request('POST', '/sync', timeout=48)
             self.reload()
             result = self.list_items()
         elif op == 'autotype':
@@ -332,8 +394,7 @@ def run() -> None:
                     try:
                         conn, _ = listener.accept()
                     except socket.timeout:
-                        if bw.expire(directory):
-                            vault.clear()
+                        vault.expire()
                         if not bw.session_path(directory).exists() and time.monotonic() - idle_since > 90:
                             break
                         continue
@@ -342,7 +403,7 @@ def run() -> None:
                     if vault.stop:
                         break
             finally:
-                vault.clear()
+                vault.shutdown()
                 try:
                     if path.is_socket() and path.stat().st_ino == inode:
                         path.unlink()
