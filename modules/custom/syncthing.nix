@@ -13,27 +13,31 @@
       inherit (lib) mkOption types;
 
       defaultPatterns = [
-        ".cache"
-        "bin"
-        "node_modules"
-        ".venv"
-        ".expo"
-        "*.class"
-        "*.o"
-        "*.toc"
-        "*.aux"
+        # (?d) means syncthing is allowed to delete it if parent is empty otherwise
+        "(?d).cache"
+        "(?d)bin"
+        "(?d)build"
+        "(?d).build"
+        "(?d)node_modules"
+        "(?d).git"
+        "(?d).venv"
+        "(?d).expo"
+        "(?d)*.class"
+        "(?d)*.o"
+        "(?d)*.toc"
+        "(?d)*.aux"
         "!capture.log"
-        "*.log"
-        "*.out"
-        "*.idx"
+        "(?d)*.log"
+        "(?d)*.out"
+        "(?d)*.idx"
 
         # windows
-        "desktop.ini"
+        "(?d)desktop.ini"
 
         # macos
-        ".DS_Store"
-        ".localized"
-        "Photos Library.photoslibrary"
+        "(?d).DS_Store"
+        "(?d).localized"
+        "(?d)Photos Library.photoslibrary"
       ];
 
       folderSubmodule =
