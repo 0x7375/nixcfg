@@ -51,6 +51,9 @@ class Vault:
         self.items: dict[str, dict] = {}
         self.loaded = False
         self.stop = False
+        self.expired_session_id: str | None = None
+        self._deadline_key: int | None = None
+        self._deadline: float | None = None
         self.server = bw_serve.Server(directory)
 
     def clear(self) -> None:
@@ -67,15 +70,40 @@ class Vault:
         bw.session_path(self.directory).unlink(missing_ok=True)
         self.clear()
 
+    def session_id(self) -> str:
+        # Public identifier for UI invalidation; never send the CLI session token.
+        try:
+            return str(bw.session_path(self.directory).stat().st_mtime_ns)
+        except FileNotFoundError:
+            return ''
+
+    def remaining_seconds(self) -> float | None:
+        # One monotonic deadline per unlock. On daemon restart, recover the
+        # remaining duration from the session file's original mtime.
+        try:
+            stamp = bw.session_path(self.directory).stat()
+        except FileNotFoundError:
+            self._deadline_key = None
+            self._deadline = None
+            return None
+        if stamp.st_mtime_ns != self._deadline_key:
+            elapsed = max(0.0, time.time() - stamp.st_mtime)
+            self._deadline_key = stamp.st_mtime_ns
+            self._deadline = time.monotonic() + max(0.0, bw.SESSION_TTL - elapsed)
+        assert self._deadline is not None
+        return self._deadline - time.monotonic()
+
     def expire(self) -> bool:
-        path = bw.session_path(self.directory)
-        if not path.exists():
+        remaining = self.remaining_seconds()
+        if remaining is None:
             if self.server.process is not None:
                 self.shutdown()
             return False
-        if time.time() - path.stat().st_mtime < bw.SESSION_TTL:
+        if remaining > 0:
             return False
+        self.expired_session_id = self.session_id()
         self.shutdown()
+        self.stop = True
         return True
 
     def check(self) -> None:
@@ -121,9 +149,8 @@ class Vault:
                     self.check()
                     if not self.loaded:
                         self.reload()
-                    bw.touch(self.directory)
                     unlock_file.unlink(missing_ok=True)
-                    return {'status': 'unlocked', 'items': self.list_items()}
+                    return {'status': 'unlocked', 'items': self.list_items(), 'session_id': self.session_id()}
                 except bw.VaultError:
                     self.shutdown()
 
@@ -134,9 +161,8 @@ class Vault:
                     self.server.start()
                     self.server.ready()
                     self.reload()
-                    bw.touch(self.directory)
                     unlock_file.unlink(missing_ok=True)
-                    return {'status': 'unlocked', 'items': self.list_items()}
+                    return {'status': 'unlocked', 'items': self.list_items(), 'session_id': self.session_id()}
                 except bw.VaultError:
                     self.shutdown()
 
@@ -184,7 +210,6 @@ class Vault:
             started = time.monotonic_ns()
             self.reload()
             list_ms = (time.monotonic_ns() - started) // 1_000_000
-            bw.touch(self.directory)
             try:
                 bw.private_replace(self.directory / 'startup-timings.json',
                                    json.dumps({'bw_unlock_ms': unlock_ms,
@@ -192,7 +217,7 @@ class Vault:
                                                'transport': 'unix-serve'}))
             except OSError:
                 pass
-            return {'status': 'unlocked', 'items': self.list_items()}
+            return {'status': 'unlocked', 'items': self.list_items(), 'session_id': self.session_id()}
         except Exception:
             # Never leave an unlocked API process behind after an aborted flow.
             self.shutdown()
@@ -205,7 +230,7 @@ class Vault:
             raise bw.VaultError('Invalid command')
         op = args[0]
         if op == 'protocol':
-            return {'version': 3}
+            return {'version': 4}
         if op == 'stop':
             self.stop = True
             self.shutdown()
@@ -213,9 +238,26 @@ class Vault:
         if op == 'open':
             return self.open()
         if op == 'expire':
-            return {'expired': self.expire()}
+            expired = self.expire()
+            active = (bw.session_path(self.directory).exists()
+                      and self.server.process is not None
+                      and self.server.process.poll() is None)
+            if not active:
+                # Terminate the Python cache process, not just bw serve, to
+                # release retained heap pages after expiry or server failure.
+                self.shutdown()
+                self.stop = True
+            return {'expired': expired, 'unlocked': bool(active)}
+        if op == 'probe':
+            try:
+                self.check()
+            except bw.VaultError:
+                self.stop = True
+                return {'status': 'locked'}
+            return {'status': 'unlocked'}
         if op == 'lock':
             self.shutdown()
+            self.stop = True
             return {'status': 'locked'}
         self.check()
         if op == 'list':
@@ -311,7 +353,6 @@ class Vault:
             result = {'value': bw.cli(cmd, self.directory).strip()}
         else:
             raise bw.VaultError('Unsupported command')
-        bw.touch(self.directory)
         return result
 
 
@@ -363,6 +404,20 @@ def handle_connection(conn: socket.socket, vault: Vault) -> None:
             pass
 
 
+def signal_noctalia_expired(session_id: str | None) -> None:
+    if not session_id:
+        return
+    # One notification after the daemon has locked and dropped its cache.
+    # If Noctalia is not running, the backend remains locked regardless.
+    try:
+        subprocess.run(['noctalia', 'msg', 'plugin', 'me/bitwarden:service',
+                        'all', 'vault_expired', session_id],
+                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
 def run() -> None:
     os.umask(0o077)
     directory = bw.runtime_dir()
@@ -385,17 +440,28 @@ def run() -> None:
             listener.bind(str(path))
             os.chmod(path, 0o600)
             listener.listen(8)
-            listener.settimeout(30)
+            # The listener's timeout is adjusted to the *one* expiry deadline.
             inode = path.stat().st_ino
             vault = Vault(directory)
             idle_since = time.monotonic()
             try:
                 while True:
+                    remaining = vault.remaining_seconds()
+                    if remaining is not None and remaining <= 0:
+                        vault.expire()
+                        break
+                    # No session: retire an unused helper after 90 seconds.
+                    # Session active: sleep in accept() until the exact deadline
+                    # or a client request; no repeated helper processes/ticks.
+                    wait = (max(0.001, remaining) if remaining is not None else
+                            max(0.001, 90 - (time.monotonic() - idle_since)))
+                    listener.settimeout(wait)
                     try:
                         conn, _ = listener.accept()
                     except socket.timeout:
-                        vault.expire()
-                        if not bw.session_path(directory).exists() and time.monotonic() - idle_since > 90:
+                        if vault.expire():
+                            break
+                        if vault.remaining_seconds() is None and time.monotonic() - idle_since >= 90:
                             break
                         continue
                     idle_since = time.monotonic()
@@ -404,6 +470,7 @@ def run() -> None:
                         break
             finally:
                 vault.shutdown()
+                signal_noctalia_expired(vault.expired_session_id)
                 try:
                     if path.is_socket() and path.stat().st_ino == inode:
                         path.unlink()

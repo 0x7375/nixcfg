@@ -134,10 +134,6 @@ def require_unlocked(directory: pathlib.Path) -> None:
         raise VaultError("Vault locked")
 
 
-def touch(directory: pathlib.Path) -> None:
-    os.utime(session_path(directory), None)
-
-
 def item_id(value: str) -> str:
     if not ID_RE.fullmatch(value):
         raise VaultError("Invalid item ID")
@@ -563,7 +559,6 @@ def main(args: list[str]) -> object:
         response = {"value": cli(cmd, directory).strip()}
     else:
         raise VaultError("Unknown operation")
-    touch(directory)
     return response
 
 

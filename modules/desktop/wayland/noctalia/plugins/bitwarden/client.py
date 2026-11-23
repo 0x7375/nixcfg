@@ -40,6 +40,13 @@ def run(args: list[str]) -> dict:
         except OSError:
             legacy = False
         return {'ok': True, 'data': {'runtime': str(directory), 'legacyPort': legacy}}
+    # A status probe must never start a daemon or unlock a vault. It is used
+    # before a saved panel can render any cached item details.
+    if args[0] == 'probe':
+        try:
+            return exchange(directory, args)
+        except (FileNotFoundError, ConnectionRefusedError):
+            return {'ok': True, 'data': {'status': 'locked'}}
     # The service's timer must not launch an unused vault daemon.
     if args[0] in ('expire', 'lock'):
         try:
@@ -48,11 +55,11 @@ def run(args: list[str]) -> dict:
             return {'ok': True, 'data': bw.main(args)}
     if args[0] == 'open':
         # A previously installed plugin may have left its older daemon running.
-        # v2.10 does not publish the post-key-prompt stage marker. Upgrade
+        # Earlier daemons use inactivity expiry. Upgrade
         # transparently before launching the unlock, preserving the CLI session.
         try:
             info = exchange(directory, ['protocol'])
-            if not info.get('ok') or info.get('data', {}).get('version') != 3:
+            if not info.get('ok') or info.get('data', {}).get('version') != 4:
                 exchange(directory, ['stop'])
                 deadline = time.monotonic() + 2
                 while (directory / 'vault.sock').exists() and time.monotonic() < deadline:

@@ -1,15 +1,13 @@
 --!nonstrict
--- Clipboard expiry, idle vault expiry, and prompt-first unlock routing.
+-- Clipboard expiry, fixed-duration vault expiry, and prompt-first unlock routing.
 -- The service never publishes any decrypted vault contents; only redacted
 -- search metadata and a session epoch are shared with the panel.
 noctalia.setUpdateInterval(200)
 
 local backend = (noctalia.pluginDir() or "") .. "/client.py"
-local lastExpireCheck = 0
 local unlockRuntime = ""
 local loadingPanelOpened = false
 local pendingClipboard = nil
-local expireInFlight = false
 local opening = false
 local epoch = tonumber(noctalia.state.get("vault_epoch")) or 0
 -- Shared plugin state survives a service reload. A pending unlock from an old
@@ -59,11 +57,33 @@ local function unlockFailed(reason)
   noctalia.notifyError("Bitwarden", explanation)
 end
 
+local function forgetReadyVault()
+  noctalia.state.set("vault_ready", false)
+  noctalia.state.set("vault_initial_items", {})
+  noctalia.state.set("vault_session_id", "")
+end
+
 local function openPanelAfterUnlock()
   if opening then return end
   if noctalia.state.get("vault_ready") == true then
-    -- A warm vault remains instant, with normal open/close toggle semantics.
-    noctalia.togglePanel("me/bitwarden:vault")
+    -- Never trust the last known ready flag after an idle timeout. Check the
+    -- private daemon before opening a panel with retained decrypted details.
+    opening = true
+    local started = helper({ "probe" }, function(data, failed)
+      opening = false
+      if not failed and type(data) == "table" and data.status == "unlocked"
+        and noctalia.state.get("vault_ready") == true then
+        noctalia.togglePanel("me/bitwarden:vault")
+      else
+        forgetReadyVault()
+        openPanelAfterUnlock() -- first show the security-key prompt
+      end
+    end, 10000)
+    if not started then
+      opening = false
+      forgetReadyVault()
+      openPanelAfterUnlock()
+    end
     return
   end
 
@@ -110,6 +130,7 @@ local function openPanelAfterUnlock()
         noctalia.state.set("vault_epoch", epoch)
       end
       noctalia.state.set("vault_initial_items", data.items or {})
+      noctalia.state.set("vault_session_id", data.session_id or "")
       noctalia.state.set("vault_opened_at", noctalia.nowMs())
       -- Set the cache first. Both an already-visible spinner and a newly
       -- opened panel then transition directly to the populated search view.
@@ -138,9 +159,16 @@ noctalia.state.watch("clipboard_request", function(request)
   noctalia.state.set("clipboard_request", { value = "" })
 end)
 
-function onIpc(event, _payload)
+function onIpc(event, payload)
   if event == "toggle_menu" or event == "open" then
     openPanelAfterUnlock()
+  elseif event == "vault_expired" then
+    -- Ignore a delayed notification from a previous unlock session.
+    if noctalia.state.get("vault_ready") == true and
+      type(payload) == "string" and payload ~= "" and
+      payload == noctalia.state.get("vault_session_id") then
+      forgetReadyVault() -- the panel's watcher scrubs details and closes it
+    end
   end
 end
 
@@ -161,20 +189,6 @@ function update()
       noctalia.runAsync({ "noctalia", "msg", "clipboard-clear" })
     end
     pendingClipboard = nil
-  end
-  if lastExpireCheck == 0 or now - lastExpireCheck >= 30000 then
-    lastExpireCheck = now
-    if not expireInFlight then
-      expireInFlight = true
-      local launched = helper({ "expire" }, function(data, _error)
-        expireInFlight = false
-        if type(data) == "table" and data.expired == true then
-          noctalia.state.set("vault_ready", false)
-          noctalia.state.set("vault_initial_items", {})
-        end
-      end, 25000)
-      if not launched then expireInFlight = false end
-    end
   end
 end
 

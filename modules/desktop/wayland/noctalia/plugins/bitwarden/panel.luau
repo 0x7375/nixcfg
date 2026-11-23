@@ -58,6 +58,7 @@ local function scrollContentWidth(overflow)
   return BODY_WIDTH - (if overflow then SCROLL_GUTTER else 0)
 end
 local panelShown = false
+local waitingForProbe = false
 local spinnerFrame = 1
 local spinnerElapsed = 0
 local openGeneration = 0
@@ -70,6 +71,7 @@ local useWebsiteIcons = false
 local render
 local fetchIcons
 local loadDetail
+local purgeLockedState
 
 local function readBindings()
   for _, action in ipairs({ "up", "down", "tab_next", "tab_previous", "validate", "save" }) do
@@ -130,13 +132,9 @@ local function call(args, done, blocking, onError)
     if problem ~= nil then
       setError(problem)
       if problem == "Vault locked" then
-        vault = "locked"
+        purgeLockedState()
         noctalia.state.set("vault_ready", false)
-        items = {}
-        visible = {}
-        detail = nil
-        draft = nil
-        mode = "search"
+        noctalia.state.set("vault_initial_items", {})
       end
       if onError ~= nil then onError(problem) end
     else
@@ -795,7 +793,7 @@ render = function()
   if message ~= "" then
     table.insert(parts, ui.label({ text = shorten(message, 200), color = "error", fontSize = 12, maxLines = 2 }))
   end
-  if mode == "search" then
+  if vault ~= "unlocked" or mode == "search" then
     table.insert(parts, searchContent())
   elseif mode == "detail" then
     table.insert(parts, detailsContent())
@@ -997,6 +995,30 @@ local function resetUnlockedState()
   searchKey += 1
 end
 
+purgeLockedState = function()
+  -- Do not preserve the item, editor draft, or revealed secrets across lock.
+  resetUnlockedState()
+  items = {}
+  visible = {}
+  matchedCount = 0
+  iconPaths = {}
+  iconAttempted = {}
+  knownEpoch = 0
+  runtimeDir = ""
+  requestPath = ""
+  editKey += 1
+  openGeneration += 1 -- callbacks from the old unlocked session are invalid
+  vault = "locked"
+end
+
+local function rejectExpiredOpen()
+  purgeLockedState()
+  noctalia.state.set("vault_ready", false)
+  noctalia.state.set("vault_initial_items", {})
+  if panelShown then panel.close() end
+  noctalia.state.set("unlock_request", noctalia.nowMs())
+end
+
 local function showUnlockedPanel()
   if not panelShown then return end
   runtimeDir = noctalia.state.get("vault_runtime") or ""
@@ -1064,8 +1086,28 @@ function onOpen(_context)
   readBindings()
   noctalia.state.set("panel_visible", true)
   if noctalia.state.get("vault_ready") == true then
-    panel.setNeedsFrameTick(false)
-    showUnlockedPanel()
+    -- The UI VM intentionally retains the last item across normal closes.
+    -- Never render that saved tree until the private daemon has verified the
+    -- inactivity deadline. Even direct panel-toggle must follow this gate.
+    vault = "loading"
+    waitingForProbe = true
+    message = ""
+    spinnerFrame = 1
+    spinnerElapsed = 0
+    render()
+    panel.setNeedsFrameTick(true)
+    call({ "probe" }, function(data)
+      waitingForProbe = false
+      if type(data) == "table" and data.status == "unlocked"
+        and noctalia.state.get("vault_ready") == true then
+        showUnlockedPanel()
+      else
+        rejectExpiredOpen()
+      end
+    end, false, function()
+      waitingForProbe = false
+      rejectExpiredOpen()
+    end)
     return
   end
   if noctalia.state.get("vault_show_loading") == true then
@@ -1089,8 +1131,17 @@ function onOpen(_context)
 end
 
 noctalia.state.watch("vault_ready", function(ready)
-  if panelShown and ready == true and vault ~= "unlocked" then
+  if ready == true and panelShown and vault ~= "unlocked" and not waitingForProbe then
+    -- A completed fresh unlock can transition the already-open spinner.
     showUnlockedPanel()
+  elseif ready == false then
+    -- A service timeout must scrub retained details even while the panel is
+    -- closed. Never allow the old view to appear on the next invocation.
+    purgeLockedState()
+    if panelShown then
+      render() -- replace any secret-bearing tree before dismissing
+      panel.close()
+    end
   end
 end)
 
@@ -1109,6 +1160,7 @@ end)
 
 function onClose()
   panelShown = false
+  waitingForProbe = false
   noctalia.state.set("panel_visible", false)
   openGeneration += 1 -- invalidate pending view callbacks
   heldKey = nil
@@ -1119,9 +1171,14 @@ function onClose()
   revealedFields = {} -- hide revealed fields when closing the panel
   nextTotpRefresh = 0
   totpRefreshPending = false
-  -- Preserve search text, selection, item and draft in this VM between opens.
-  -- A fresh unlock epoch explicitly clears all of it in resetUnlockedState.
+  -- Preserve search text, selection, item and draft in this VM between opens,
+  -- but replace the *rendered tree* with a neutral loading view before the
+  -- surface can be reused. onOpen verifies the session before restoring it.
   if saving then pendingSaveRefresh = true end
+  local priorMode, priorVault = mode, vault
+  mode, vault = "search", "loading"
+  render()
+  mode, vault = priorMode, priorVault
   busy = false
   saving = false
   openingItem = false
