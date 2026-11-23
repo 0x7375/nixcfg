@@ -207,10 +207,6 @@
           map S su
           map V invert
 
-          cmd online-share $${getExe curl} -F"file=@$f" https://0x0.st | ${open}
-
-          map W online-share
-
           map [
           map \"
           map \$ push :$
@@ -470,8 +466,53 @@
     };
 
   flake.modules.nixos.desktop =
-    { lib, pkgs, ... }:
     {
+      lib,
+      pkgs,
+      config,
+      ...
+    }:
+    {
+      sops.secrets.microbin_pw.owner = config.me.user;
+
+      hj.xdg.config.files."lf/lfrc".text =
+        let
+          inherit (lib) getExe;
+        in
+        # bash
+        ''
+          cmd online-share ''${{
+            if [[ ! -f "$f" ]]; then
+              printf 'Select a regular file to upload.\n' >&2
+              exit 1
+            fi
+
+            response="$(${getExe pkgs.curl} -fsS -o /dev/null -w '%{http_code}\n%{redirect_url}' \
+              --form-string 'content=' \
+              --form-string 'expiration=never' \
+              --form-string 'burn_after=0' \
+              --form-string 'privacy=public' \
+              -F "uploader_password=<${config.sops.secrets.microbin_pw.path}" \
+              -F "file=@$f" \
+              https://share.0xaa.me/upload)" || exit 1
+
+            http_status="''${response%%$'\n'*}"
+            location="''${response#*$'\n'}"
+            case "$http_status:$location" in
+              302:https://share.0xaa.me/upload/*) ;;
+              *)
+                printf 'MicroBin upload failed (HTTP %s, redirect %s)\n' "$http_status" "$location" >&2
+                exit 1
+                ;;
+            esac
+
+            url="https://share.0xaa.me/upload/''${location##*/}"
+            printf '%s' "$url" | ${config.me.desktop.copy}
+            ${getExe pkgs.lf} -remote "send $id echo \"Copied $url\""
+          }}
+          map W online-share
+        '';
+
       tinted.files.".config/mango/config.conf".static = {
         bind = [
           "SUPER,e,toggle_named_scratchpad,foot-lf,none,footclient --app-id foot-lf -e ${lib.getExe pkgs.lf}"
