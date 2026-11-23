@@ -44,7 +44,7 @@
           "use_ino"
           "cache.files=partial"
           "dropcacheonclose=true"
-          "category.create=epmfs"
+          "category.create=mfs"
           "fsname=mergerfs"
           "minfreespace=10G"
         ];
