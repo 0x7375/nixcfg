@@ -65,16 +65,13 @@
                 withSolver = name: { inherit name tags; };
               in
               [
-                { name = "World-torrent"; }
                 { name = "Knaben"; }
                 { name = "LimeTorrents"; }
                 { name = "Nyaa.si"; }
                 { name = "Tokyo Toshokan"; }
-                { name = "YTS"; }
                 (withSolver "1337x")
                 (withSolver "Uindex")
                 (withSolver "Torrent Downloads")
-                (withSolver "Internet Archive")
                 {
                   name = "C411 (Custom)";
                   apikey._secret = config.sops.secrets."indexers/c411".path;
