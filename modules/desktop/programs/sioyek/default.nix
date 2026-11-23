@@ -43,10 +43,17 @@
     {
       packages = [
         (pkgs.sioyek.overrideAttrs (old: {
-          patches = (old.patches or [ ]) ++ [
-            ./page_move_boundaries_fix.patch
-            ./fit_page_height_ignore_statusbar.patch
+          version = "2.0.0-unstable-2026-11-04";
 
+          src = pkgs.fetchFromGitHub {
+            owner = "ahrm";
+            repo = "sioyek";
+            rev = "1e2f8037353724a83ccb10a697e28e295383e017";
+            hash = "sha256-wfV4Mwpj1WE00UMTE+8OzVTf3IwF5+ReM4NlBbsy5Ec=";
+          };
+
+          patches = (old.patches or [ ]) ++ [
+            ./fit_page_height_ignore_statusbar.patch
             # fixes: https://github.com/ahrm/sioyek/issues/1283#issuecomment-4469874080
             ./remove_qsuface_format.patch
           ];
