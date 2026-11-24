@@ -42,7 +42,7 @@
           ];
 
           server_names = [
-            "aquilenet"
+            # "aquilenet"
             "fdn-ns0"
             "fdn-ns1"
           ];
@@ -59,13 +59,14 @@
 
           bootstrap_resolvers = [ ];
           ignore_system_dns = true;
-          netprobe_address = "45.67.81.23:443";
+          # netprobe_address = "45.67.81.23:443";
+          netprobe_address = "80.67.169.12:443";
 
           cache = true;
           cache_size = 4096;
 
           static = {
-            "aquilenet".stamp = "sdns://AgcAAAAAAAAACzQ1LjY3LjgxLjIzABBkbnMuYXF1aWxlbmV0LmZyCi9kbnMtcXVlcnk";
+            # "aquilenet".stamp = "sdns://AgcAAAAAAAAACzQ1LjY3LjgxLjIzABBkbnMuYXF1aWxlbmV0LmZyCi9kbnMtcXVlcnk";
             "fdn-ns0".stamp = "sdns://AgcAAAAAAAAADDgwLjY3LjE2OS4xMgAKbnMwLmZkbi5mcgovZG5zLXF1ZXJ5";
             "fdn-ns1".stamp = "sdns://AgcAAAAAAAAADDgwLjY3LjE2OS40MAAKbnMxLmZkbi5mcgovZG5zLXF1ZXJ5";
           };
@@ -100,8 +101,8 @@
 
       networking.nameservers = [
         # Aquilenet
-        "45.67.81.23#dns.aquilenet.fr"
-        "2a0c:e300::1337#dns.aquilenet.fr"
+        # "45.67.81.23#dns.aquilenet.fr"
+        # "2a0c:e300::1337#dns.aquilenet.fr"
 
         # FDN
         "80.67.169.12#ns0.fdn.fr"
