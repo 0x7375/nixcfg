@@ -93,7 +93,7 @@
                 {
                   name = "V3X (Custom)";
                   apikey._secret = config.sops.secrets."indexers/v3x".path;
-                  priority = 10;
+                  priority = 5;
                   multilang = true;
                   multilanguage = 5;
                 }
