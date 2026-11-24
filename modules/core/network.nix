@@ -42,28 +42,32 @@
           ];
 
           server_names = [
-            "quad9-doh-ip4-primary"
-            "quad9-doh-ip4-secondary"
+            "aquilenet"
+            "fdn-ns0"
+            "fdn-ns1"
           ];
 
           ipv4_servers = true;
           dnscrypt_servers = false;
           doh_servers = true;
 
+          require_dnssec = true;
           require_nolog = true;
-          require_nofilter = false;
+          require_nofilter = true;
+
+          lb_strategy = "first";
 
           bootstrap_resolvers = [ ];
           ignore_system_dns = true;
-          netprobe_address = "9.9.9.9:443";
+          netprobe_address = "45.67.81.23:443";
 
           cache = true;
           cache_size = 4096;
 
           static = {
-            "quad9-doh-ip4-primary".stamp = "sdns://AgMAAAAAAAAABzkuOS45LjkADWRucy5xdWFkOS5uZXQKL2Rucy1xdWVyeQ";
-            "quad9-doh-ip4-secondary".stamp =
-              "sdns://AgMAAAAAAAAADzE0OS4xMTIuMTEyLjExMgANZG5zLnF1YWQ5Lm5ldAovZG5zLXF1ZXJ5";
+            "aquilenet".stamp = "sdns://AgcAAAAAAAAACzQ1LjY3LjgxLjIzABBkbnMuYXF1aWxlbmV0LmZyCi9kbnMtcXVlcnk";
+            "fdn-ns0".stamp = "sdns://AgcAAAAAAAAADDgwLjY3LjE2OS4xMgAKbnMwLmZkbi5mcgovZG5zLXF1ZXJ5";
+            "fdn-ns1".stamp = "sdns://AgcAAAAAAAAADDgwLjY3LjE2OS40MAAKbnMxLmZkbi5mcgovZG5zLXF1ZXJ5";
           };
         };
       };
@@ -95,10 +99,15 @@
       imports = [ self.modules.generic.network ];
 
       networking.nameservers = [
-        "9.9.9.9#dns.quad9.net"
-        "149.112.112.112#dns.quad9.net"
-        "2620:fe::fe#dns.quad9.net"
-        "2620:fe::9#dns.quad9.net"
+        # Aquilenet
+        "45.67.81.23#dns.aquilenet.fr"
+        "2a0c:e300::1337#dns.aquilenet.fr"
+
+        # FDN
+        "80.67.169.12#ns0.fdn.fr"
+        "80.67.169.40#ns1.fdn.fr"
+        "2001:910:800::12#ns0.fdn.fr"
+        "2001:910:800::40#ns1.fdn.fr"
       ];
 
       services.resolved = {
