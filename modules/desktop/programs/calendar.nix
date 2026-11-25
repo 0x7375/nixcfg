@@ -49,8 +49,6 @@
       packages = [ pkgs.gnome-calendar ];
 
       programs.dconf = {
-        enable = true;
-
         profiles.user.databases = [
           {
             settings."org/gnome/evolution-data-server" = {

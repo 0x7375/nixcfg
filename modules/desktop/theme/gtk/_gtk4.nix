@@ -54,6 +54,11 @@ p:
   @define-color theme_unfocused_selected_bg_color @accent_bg_color;
   @define-color theme_unfocused_selected_fg_color @accent_fg_color;
 
+  toastoverlay > toast {
+    background-color: var(--popover-bg-color);
+    color: var(--popover-fg-color);
+  }
+
   :root {
     --accent-color: ${p.green};
     --accent-bg-color: ${p.green}; 
