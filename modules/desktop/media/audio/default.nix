@@ -15,7 +15,7 @@
         ];
 
         # until 2026.11.23 is in multiverse (and change the meiro derivation to use system packages)
-        hj.xdg.files."yt-dlp/config".text = "--force-ipv4";
+        hj.xdg.config.files."yt-dlp/config".text = "--force-ipv4";
 
         tinted.files.".config/Meiro/colors.json" =
           let
