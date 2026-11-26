@@ -18,17 +18,25 @@
         backupKey.sshKey.public
       ];
 
-      programs.ssh.extraConfig = ''
-        Host *
-          StrictHostKeyChecking accept-new
-      ''
-      + builtins.concatStringsSep "\n" (
-        lib.map (v: "Host ${v}\n  ForwardAgent yes\n") [
-          "cray"
-          "naitoh"
-          "woz"
-        ]
-      );
+      programs.ssh = {
+        knownHosts = {
+          "codeberg.org".publicKey =
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIVIC02vnjFyL+I4RHfvIGNtOgJMe769VTF1VR4EB3ZB";
+          "github.com".publicKey =
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+        };
+        extraConfig = ''
+          Host *
+            StrictHostKeyChecking accept-new
+        ''
+        + builtins.concatStringsSep "\n" (
+          lib.map (v: "Host ${v}\n  ForwardAgent yes\n") [
+            "cray"
+            "naitoh"
+            "woz"
+          ]
+        );
+      };
 
       hj.files.".ssh/main_sk" = {
         text = builtins.readFile ./main_sk;
