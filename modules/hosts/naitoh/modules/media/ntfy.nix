@@ -11,7 +11,7 @@
     }:
     let
       inherit (config.me) services;
-      inherit (services.ntfy) port;
+      inherit (services.ntfy) port url;
     in
     {
       me.services.ntfy = {
@@ -32,8 +32,8 @@
       services.ntfy-sh = {
         enable = true;
         settings = {
-          base-url = "http://localhost:" + toString port;
-          listen-http = ":" + toString port;
+          base-url = url;
+          listen-http = "127.0.0.1:${toString port}";
           auth-default-access = "read-write";
         };
       };

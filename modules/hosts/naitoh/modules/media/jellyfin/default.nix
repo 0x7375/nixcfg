@@ -4,7 +4,6 @@
       mv,
       pkgs,
       config,
-      lib,
       ...
     }:
     {
@@ -52,6 +51,8 @@
         IOSchedulingPriority = 2;
       };
 
+      me.hostSecrets."oidc/jellyfin".owner = config.services.jellyfin.user;
+
       nixflix.jellyfin =
         let
           abyss = pkgs.fetchFromGitHub {
@@ -86,6 +87,7 @@
           jellyfinPackage =
             pkgs.runCommand "jellyfin"
               {
+                inherit (mv.latest.jellyfin) version;
                 meta.mainProgram = "jellyfin";
               }
               ''
@@ -106,7 +108,6 @@
         in
         {
           enable = true;
-          openFirewall = true;
           package = jellyfinPackage;
 
           libraries =
@@ -121,18 +122,30 @@
               Shows = common;
             };
 
-          users.admin = {
-            policy.isAdministrator = true;
+          users.seerr = {
             password._secret = config.sops.secrets."jellyfin/admin_pw".path;
+            policy = {
+              isAdministrator = true;
+              isHidden = true;
+              enableRemoteAccess = false;
+            };
           };
 
           system.enableGroupingMoviesIntoCollections = true;
 
-          branding.customCss =
-            # css
-            ''
-              @import url('https://cdn.jsdelivr.net/gh/AumGupta/abyss-jellyfin@main/abyss.css');
-            '';
+          branding = {
+            loginDisclaimer =
+              # html
+              ''
+                <div id="oidc-sso-buttons">
+                  <a class="oidc-sso-btn" href="/sso/OIDC/Start/pocketid">
+                    <span>Pocket ID</span>
+                  </a>
+                </div>
+              '';
+
+            customCss = builtins.readFile ./style.css;
+          };
 
           users.${config.me.user}.password._secret = config.sops.secrets."jellyfin/user_pw".path;
           apiKey._secret = config.sops.secrets."jellyfin/api_key".path;
@@ -150,6 +163,58 @@
             ];
             enableTonemapping = true;
             enableEnhancedNvdecDecoder = false;
+          };
+
+          plugins."SSO-OIDC-Authentication" = {
+            enable = true;
+
+            config = {
+              Providers = [
+                {
+                  ProviderId = "pocketid";
+                  DisplayName = "Pocket ID";
+                  Authority = config.me.services.pocket-id.url;
+                  ClientId = "7a750fe8-d028-49f8-8e7a-3775565f610a";
+                  ClientSecretFile = config.sops.secrets."oidc/jellyfin".path;
+                  Scopes = "openid profile groups";
+                  RoleClaim = "groups";
+                  UsernameClaim = "preferred_username";
+                  Enabled = true;
+                }
+              ];
+
+              ServerBaseUrl = config.me.services.jellyfin.url;
+
+              AutoCreateUsers = true;
+              MigrateLocalUsers = true;
+
+              AllowedGroups = [
+                "admin"
+                "user"
+              ];
+
+              ManageLoginButtonBranding = false;
+              HideManualLogin = true;
+              LoginTitle = "";
+              LoginSubtitle = "";
+
+              RoleMappings = [
+                {
+                  RoleName = "admin";
+                  IsAdmin = true;
+                  EnableAllLibraries = true;
+
+                  EnableContentDeletion = true;
+                  EnableCollectionManagement = true;
+                  EnableSubtitleManagement = true;
+                }
+                {
+                  RoleName = "user";
+                  IsAdmin = false;
+                  EnableAllLibraries = true;
+                }
+              ];
+            };
           };
         };
     };

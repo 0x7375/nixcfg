@@ -5,6 +5,7 @@
       me.services.graine = {
         subdomain = "graine";
         port = 3000;
+        sso = true;
       };
 
       virtualisation.oci-containers.containers.graine =

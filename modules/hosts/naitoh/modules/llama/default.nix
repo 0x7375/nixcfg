@@ -78,6 +78,7 @@
         subdomain = "ai";
         port = 8088;
         webSockets = true;
+        sso = true;
         extraConfig = ''
             proxy_set_header Accept-Encoding "";
             proxy_read_timeout 1h;

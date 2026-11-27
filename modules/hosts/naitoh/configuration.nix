@@ -8,19 +8,7 @@
       ...
     }:
     {
-      imports =
-        let
-          nixflixPatched = inputs.nixpkgs.legacyPackages.x86_64-linux.applyPatches {
-            name = "nixflix-patched";
-            src = inputs.nixflix;
-            patches = [ ./nixflix_sonarr_v5.patch ];
-          };
-        in
-
-        [
-          "${nixflixPatched}/modules"
-          inputs.nixflix.inputs.vpn-confinement.nixosModules.default
-        ];
+      imports = [ inputs.nixflix.nixosModules.default ];
 
       me = {
         tpm.enable = true;

@@ -63,8 +63,8 @@
       hj.xdg.config.files = {
         "evolution-data-server/autoconfig/radicale.source".text = mkAccount {
           name = "Radicale";
-          host = "calendar.0xaa.me";
-          url = "https://calendar.0xaa.me/admin/";
+          host = "dav.0xaa.me";
+          url = "https://dav.0xaa.me/admin/";
           username = "admin";
         };
 

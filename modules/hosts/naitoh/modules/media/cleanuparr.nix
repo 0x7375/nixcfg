@@ -44,6 +44,7 @@
             TZ = toString config.time.timeZone;
             PUID = "0";
             PGID = "0";
+            BIND_ADDRESS = "127.0.0.1";
           };
         };
     };

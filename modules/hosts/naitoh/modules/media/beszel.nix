@@ -72,6 +72,8 @@
           environment = {
             KEY = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGrkPu4QJhKyEoiI+aADBILeUDcg0tx1Q46x36+jlS1I";
             HUB_URL = "http://127.0.0.1:${toString port}";
+            DISABLE_PASSWORD_AUTH = "true";
+            OAUTH_DISABLE_POPUP = "false";
           };
           environmentFile = config.sops.templates.beszel-hub.path;
         };
@@ -96,7 +98,6 @@
             HUB_URL = "http://127.0.0.1:${toString port}";
           };
           environmentFile = config.sops.templates.beszel-agent.path;
-          openFirewall = true;
         };
       };
     };

@@ -25,7 +25,7 @@
         enable = true;
         environmentFile = config.sops.templates."attic.env".path;
         settings = {
-          listen = "[::]:${toString port}";
+          listen = "127.0.0.1:${toString port}";
           api-endpoint = url + "/";
           jwt = { };
 

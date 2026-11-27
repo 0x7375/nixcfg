@@ -60,7 +60,7 @@
       };
 
       inherit (config.tinted.colors) dark light;
-      inherit (config.me.services.radicale) url;
+      inherit (config.me.services.radicale-dav) url;
     in
     {
       options.me.desktop =

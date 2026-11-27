@@ -9,19 +9,13 @@
       ...
     }:
     {
-      me.services = {
-        flaresolverr = {
-          subdomain = "solver";
-          inherit (config.services.flaresolverr) port;
-        };
-        prowlarr = {
-          subdomain = "indexer";
-          inherit (config.nixflix.prowlarr.config.hostConfig) port;
-        };
+      me.services.prowlarr = {
+        subdomain = "indexer";
+        inherit (config.nixflix.prowlarr.config.hostConfig) port;
+        sso = true;
       };
 
       me.hostSecrets."prowlarr/api_key" = { };
-      me.hostSecrets."prowlarr/pw" = { };
 
       me.hostSecrets."indexers/c411" = { };
       me.hostSecrets."indexers/tr4ker" = { };
@@ -29,6 +23,7 @@
       me.hostSecrets."indexers/rutracker" = { };
       me.hostSecrets."indexers/speedapp" = { };
       me.hostSecrets."indexers/yggreborn" = { };
+      me.hostSecrets."indexers/seedcore" = { };
 
       networking.enableIPv6 = false;
 
@@ -59,10 +54,15 @@
         prowlarr = {
           enable = true;
           package = self.lib.withMainProgram "Prowlarr" mv.latest.prowlarr;
-          openFirewall = true;
           config = {
             apiKey._secret = config.sops.secrets."prowlarr/api_key".path;
-            hostConfig.password._secret = config.sops.secrets."prowlarr/pw".path;
+            hostConfig = {
+              bindAddress = "127.0.0.1";
+              authenticationMethod = "external";
+              authenticationRequired = "enabled";
+              username = null;
+              password = null;
+            };
             indexers =
               let
                 tags = [ "flaresolverr" ];
@@ -108,6 +108,11 @@
                   name = "SpeedApp.io";
                   email = "revenge.spiritual345@0xaa.me";
                   password._secret = config.sops.secrets."indexers/speedapp".path;
+                  priority = 15;
+                }
+                {
+                  name = "SeedCore (API)";
+                  apikey._secret = config.sops.secrets."indexers/seedcore".path;
                   priority = 15;
                 }
                 # not until this is merged ig https://github.com/FlareSolverr/FlareSolverr/pull/1809

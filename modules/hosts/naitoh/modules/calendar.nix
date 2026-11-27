@@ -7,7 +7,7 @@
       ...
     }:
     let
-      inherit (config.me.services.radicale) port;
+      inherit (config.me.services.radicale-dav) port;
 
       notesUser = config.services.syncthing.user;
       notesDir = "/data/main/syncthing/notes";
@@ -103,7 +103,6 @@
       '';
     in
     {
-      me.hostSecrets.radicale_users.owner = "radicale";
       sops.secrets.calendar_default_pw.owner = notesUser;
       sops.templates.calendar_orgzly_auth = {
         owner = notesUser;
@@ -115,15 +114,36 @@
 
       persist.directories = [ "/var/lib/org-caldav" ];
 
+      me.hostSecrets.radicale_users.owner = config.services.nginx.user;
+
+      me.services = {
+        radicale = {
+          sso = true;
+
+          extraConfig = ''
+            auth_request_set $sso_username $upstream_http_x_auth_request_preferred_username;
+            proxy_set_header X-Remote-User $sso_username;
+          '';
+        };
+        radicale-dav = {
+          subdomain = "dav";
+          port = 5232;
+          visible = false;
+
+          extraConfig = ''
+            auth_basic "Radicale";
+            auth_basic_user_file ${config.sops.secrets.radicale_users.path};
+            proxy_set_header X-Remote-User $remote_user;
+          '';
+        };
+      };
+
       services.radicale = {
         enable = true;
         settings = {
           server.hosts = [ "127.0.0.1:${toString port}" ];
-          auth = {
-            type = "htpasswd";
-            htpasswd_filename = config.sops.secrets.radicale_users.path;
-            htpasswd_encryption = "bcrypt";
-          };
+          auth.type = "http_x_remote_user";
+          web.prefer_browser_login = true;
         };
       };
 

@@ -186,6 +186,8 @@
       me.services.syncthing = {
         subdomain = "sync";
         port = 8384;
+        sso = true;
+        proxyAuthSecret = "syncthing/basic_auth";
       };
 
       me.hostSecrets."syncthing/key".owner = "syncthing";

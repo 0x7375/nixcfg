@@ -17,6 +17,8 @@
         qbittorrent = {
           subdomain = "qbittorrent";
           port = config.nixflix.torrentClients.qbittorrent.webuiPort;
+          sso = true;
+          proxyAuthSecret = "qbittorrent/basic_auth";
         };
         qui = {
           subdomain = "torrent";
@@ -32,7 +34,6 @@
         enable = true;
         password._secret = config.sops.secrets."qbittorrent/pw".path;
         package = self.lib.withMainProgram "qbittorrent-nox" mv.latest.qbittorrent-nox;
-        openFirewall = true;
         profileDir = "/data/main/.state/qBittorrent";
         serverConfig = {
           LegalNotice.Accepted = true;
@@ -63,10 +64,13 @@
           Preferences = {
             Connection.ResolvePeerCountries = false;
             WebUI = {
+              Address = "127.0.0.1";
+              LocalHostAuth = true;
+              AuthSubnetWhitelistEnabled = false;
               Username = "admin";
               Password_PBKDF2 = "@ByteArray(${template})";
-              CSRFProtection = false;
-              ClickjackingProtection = false;
+              CSRFProtection = true;
+              ClickjackingProtection = true;
               MaxAuthenticationFailCount = 10;
             };
             General.Locale = "en";
@@ -113,10 +117,11 @@
         user = config.services.qbittorrent.user;
         package = self.lib.withMainProgram "qui" mv.latest.qui;
         group = config.services.qbittorrent.group;
-        openFirewall = true;
         secretFile = config.sops.secrets.qui_session.path;
         settings.host = "127.0.0.1";
       };
+
+      me.hostSecrets."oidc/qui".owner = config.services.qbittorrent.user;
 
       systemd.services.qui = {
         after = [ "qbittorrent.service" ];
@@ -127,13 +132,15 @@
           QUI__CHECK_FOR_UPDATES = "false";
           HOME = config.nixflix.torrentClients.qbittorrent.profileDir;
           XDG_CONFIG_HOME = config.nixflix.torrentClients.qbittorrent.profileDir;
-        };
 
-        preStart = lib.mkAfter ''
-          pass=$(cat "${config.sops.secrets."qbittorrent/pw".path}")
-          ${lib.getExe pkgs.qui} create-user --username admin --password "$pass" 2>/dev/null || \
-          ${lib.getExe pkgs.qui} change-password --username admin --new-password "$pass"
-        '';
+          QUI__OIDC_ENABLED = "true";
+          QUI__OIDC_ISSUER = config.me.services.pocket-id.url;
+          QUI__OIDC_CLIENT_ID = "481dafb4-3606-4db5-88a6-97e9ded743cc";
+          QUI__OIDC_CLIENT_SECRET_FILE = config.sops.secrets."oidc/qui".path;
+          QUI__OIDC_REDIRECT_URL = "${config.me.services.qui.baseUrl}/api/auth/oidc/callback";
+          QUI__OIDC_DISABLE_BUILT_IN_LOGIN = "true";
+          QUI__OIDC_ALLOWED_SUBJECT = config.me.oidcSubject;
+        };
       };
 
       security.polkit.extraConfig =

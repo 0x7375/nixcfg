@@ -155,9 +155,9 @@
     "type": "github",
     "owner": "kiriwalawren",
     "repo": "nixflix",
-    "rev": "8f0426505cf6325ed6a997336f4f276a60e521f5",
-    "narHash": "sha256-sLTWqTA9y012hHeQvFDK3xX5adtVTNyrLCwP3IYBYcM=",
-    "lastModified": 1793928283
+    "rev": "bd645b77d743555943a6a38514e4f041b159e145",
+    "narHash": "sha256-sZHXkRsHrb2uvD7AtTOi7jrYVki54laQuLgc8jd6Zsk=",
+    "lastModified": 1795396364
   },
   "nixpkgs": {
     "type": "github",

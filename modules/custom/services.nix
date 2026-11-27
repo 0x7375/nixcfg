@@ -31,6 +31,12 @@
               description = "Path appended to the url";
             };
 
+            baseUrl = mkOption {
+              type = types.str;
+              readOnly = true;
+              default = "https://${config.subdomain}.${parentConfig.me.domain}";
+            };
+
             url = mkOption {
               type = types.str;
               readOnly = true;
@@ -41,6 +47,20 @@
             };
 
             webSockets = mkEnableOption "Enable websocket proxying";
+
+            sso = mkEnableOption "Protect the service with single sign-on";
+
+            proxyAuthSecret = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "SOPS secret containing base64-encoded backend credentials";
+            };
+
+            visible = mkOption {
+              type = types.bool;
+              default = true;
+              description = "Show the service on the homepage";
+            };
 
             extraConfig = mkOption {
               type = types.lines;
@@ -74,6 +94,10 @@
       config.me.services = {
         radicale = {
           subdomain = "calendar";
+          port = 5232;
+        };
+        radicale-dav = {
+          subdomain = "dav";
           port = 5232;
         };
         attic = {
