@@ -27,7 +27,7 @@
 
             export GIT_SSH_COMMAND="ssh -i ${
               config.sops.secrets."codeberg_id".path
-            } -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+            } -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
 
             repos=$(curl -s "''${remote_url}/api/v1/users/$user/repos" | jq -r '.[].clone_url')
 

@@ -35,7 +35,7 @@
 
           export GIT_SSH_COMMAND="ssh -i ${
             config.sops.secrets."codeberg_id".path
-          } -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+          } -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
 
           if [[ ! -d "$DIR" ]]; then
             git clone git@codeberg.org:0x7E/nixcfg "$DIR"
@@ -110,11 +110,67 @@
         };
       };
 
+      systemd.services.nd-upgrade = {
+        restartIfChanged = false;
+
+        path = with pkgs; [
+          config.system.path
+          nix
+          git
+          openssh
+          sudo
+        ];
+
+        script = ''
+          set -euo pipefail
+
+          DIR="$STATE_DIRECTORY/flake"
+          LOG="$LOGS_DIRECTORY/$(date +%Y-%m-%d_%H-%M-%S).log"
+
+          echo "Rebuild log: $LOG"
+
+          ln -sfn "$LOG" "$LOGS_DIRECTORY/latest.log"
+          find "$LOGS_DIRECTORY" -type f -name '*.log' -mtime +30 -delete
+
+          exec > "$LOG" 2>&1
+
+          export GIT_SSH_COMMAND="ssh -i ${
+            config.sops.secrets."codeberg_id".path
+          } -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
+
+          if [[ ! -d "$DIR" ]]; then
+            git clone git@codeberg.org:0x7E/nixcfg "$DIR"
+          fi
+
+          cd "$DIR"
+
+          git fetch origin
+          git reset --hard origin/main
+
+          nd switch --yes --interactive=false
+        '';
+
+        serviceConfig = {
+          Type = "oneshot";
+          StateDirectory = "nd-upgrade";
+          LogsDirectory = "nd";
+          LogsDirectoryMode = "0700";
+        };
+      };
+
       systemd.timers.flake-update = {
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "daily";
-          Persistent = true;
+          OnCalendar = "01:00";
+          Persistent = false;
+        };
+      };
+
+      systemd.timers.nd-upgrade = {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "03:00";
+          Persistent = false;
         };
       };
     };
