@@ -107,9 +107,9 @@
     "type": "git",
     "url": "https://codeberg.org/0x7E/nd",
     "ref": "HEAD",
-    "rev": "eb3633267b57bda123c0e8f084ce93d4c98cbd9b",
-    "narHash": "sha256-VfQDPtSG+6CarqOC4TaS7/vj20AgnKhrJ5n3zwL7Y2E=",
-    "lastModified": 1795829111
+    "rev": "8c2af12d00fc1bdcfd3052d41f44f92d11f9ceaf",
+    "narHash": "sha256-TeNFfzhQvAfw9gGdsrXqRnwCMYbCyuSTdGZ4XcA2bD4=",
+    "lastModified": 1795831088
   },
   "neovim": {
     "type": "github",
