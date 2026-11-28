@@ -11,8 +11,8 @@
           EDITOR = "nvim";
           VISUAL = "nvim";
           PAGER = "less -R";
-          LESS = "-R";
-          SYSTEMD_LESS = "RM";
+          LESS = "-R --mouse";
+          SYSTEMD_LESS = "RM --mouse";
           MANPAGER = "nvim +Man\\!";
 
           GTK_CSD = "0";
