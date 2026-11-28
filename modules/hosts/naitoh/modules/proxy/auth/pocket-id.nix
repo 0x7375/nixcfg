@@ -40,6 +40,7 @@
             ANALYTICS_DISABLED = true;
             ALLOW_INSECURE_CALLBACK_URLS = false;
             DISABLE_RATE_LIMITING = true;
+            VERSION_CHECK_DISABLED = "true";
 
             UI_CONFIG_DISABLED = true;
             REQUIRE_USER_EMAIL = true;
