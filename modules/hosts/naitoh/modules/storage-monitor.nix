@@ -17,7 +17,7 @@
 
         script =
           let
-            ntfyUrl = config.me.services.ntfy.url;
+            ntfyUrl = "http://127.0.0.1:${toString config.me.services.ntfy.port}";
           in
           # bash
           ''
@@ -39,8 +39,13 @@
               if [[ -n $hit ]]; then
                 local lockfile="$lock_dir/''${name}_''${hit}"
                 if [[ ! -f $lockfile ]]; then
-                  curl -d "''${name} filesystem at ''${usage}% (''${threshold_labels[$hit]})" "${ntfyUrl}/status"
-                  touch "$lockfile"
+                  if curl --fail \
+                    --header @- \
+                    -d "''${name} filesystem at ''${usage}% (''${threshold_labels[$hit]})" \
+                    "${ntfyUrl}/status" \
+                    <<< "Authorization: Bearer $(< "$CREDENTIALS_DIRECTORY/ntfy_token")"; then
+                    touch "$lockfile"
+                  fi
                 fi
               else
                 for t in "''${thresholds[@]}"; do rm -f "$lock_dir/''${name}_''${t}"; done
@@ -51,7 +56,13 @@
             check_filesystem "data" "$(get_usage /data/shared)"
           '';
 
-        serviceConfig.Type = "oneshot";
+        serviceConfig = {
+          Type = "oneshot";
+
+          LoadCredential = [
+            "ntfy_token:${config.sops.secrets."ntfy/token".path}"
+          ];
+        };
       };
 
       systemd.timers.storage-monitor = {

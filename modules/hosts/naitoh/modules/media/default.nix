@@ -106,27 +106,6 @@
             "L+ /var/lib/recyclarr/custom_formats/personal-blocklist.json 0644 recyclarr recyclarr - ${personalBlocklistFile}"
             "L+ /var/lib/recyclarr/settings.yml 0644 recyclarr recyclarr - ${settingsYml}"
           ];
-
-        systemd.services = lib.mkMerge (
-          map (service: self.lib.notifyOnServiceFailure service) [
-            "podman-cleanuparr"
-            "jellyfin"
-            "syncthing"
-            "seerr"
-            "prowlarr"
-            "flaresolverr"
-            "qbittorrent"
-            "qui"
-            "radarr"
-            "sonarr"
-            "bazarr"
-            "recylarr"
-            "attic"
-            "sshd"
-            "beszel-agent"
-            "beszel-hub"
-          ]
-        );
       };
     };
 }

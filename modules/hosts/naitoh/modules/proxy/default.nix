@@ -273,9 +273,6 @@
         ) services;
       };
 
-      systemd.services =
-        self.lib.notifyOnServiceFailure "nginx" // self.lib.notifyOnServiceFailure "acme-${domain}";
-
       me.hostSecrets = {
         cloudflare_dns_token = { };
       }

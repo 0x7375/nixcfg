@@ -50,7 +50,5 @@
           oidc-email-claim = "preferred_username";
         };
       };
-
-      systemd.services = self.lib.notifyOnServiceFailure "oauth2-proxy";
     };
 }

@@ -1,8 +1,4 @@
 {
-  flake.lib.notifyOnServiceFailure = service: {
-    ${service}.unitConfig.OnFailure = "service-failure-notify@%N.service";
-  };
-
   flake.modules.nixos.naitoh =
     {
       pkgs,
@@ -20,6 +16,16 @@
         webSockets = true;
       };
 
+      me.hostSecrets."ntfy/token" = { };
+      me.hostSecrets."ntfy/pw_hash" = { };
+
+      sops.templates."ntfy-env".content =
+        # ini
+        ''
+          NTFY_AUTH_USERS='publisher:${config.sops.placeholder."ntfy/pw_hash"}:user'
+          NTFY_AUTH_TOKENS='publisher:${config.sops.placeholder."ntfy/token"}'
+        '';
+
       persist.directories = [
         {
           directory = "/var/lib/private/ntfy-sh";
@@ -31,12 +37,28 @@
 
       services.ntfy-sh = {
         enable = true;
+        environmentFile = config.sops.templates."ntfy-env".path;
+
         settings = {
           base-url = url;
           listen-http = "127.0.0.1:${toString port}";
-          auth-default-access = "read-write";
+
+          auth-file = "/var/lib/ntfy-sh/user.db";
+          auth-default-access = "read-only";
+          auth-access = [ "publisher:*:rw" ];
+          enable-signup = false;
         };
       };
+
+      systemd.units."service.d/10-notify-on-failure.conf".text = ''
+        [Unit]
+        OnFailure=service-failure-notify@%N.service
+      '';
+
+      # notify on any service failure
+      systemd.units."service-failure-notify@.service.d/10-notify-on-failure.conf".enable = false;
+      # blacklist a noisy service with
+      # systemd.units."servicename.service.d/10-notify-on-failure.conf".enable = false;
 
       systemd.services."service-failure-notify@" =
         let
@@ -49,7 +71,7 @@
             ];
             text = ''
               unit="$1"
-              url="http://localhost:${toString port}/status"
+              url="http://127.0.0.1:${toString port}/status"
 
               notify() {
                 curl \
@@ -59,8 +81,11 @@
                   --retry 5 \
                   --retry-connrefused \
                   --retry-delay 2 \
+                  --header @- \
                   -d "Service $unit failed" \
-                  "$url" || true
+                  "$url" \
+                  <<< "Authorization: Bearer $(< "$CREDENTIALS_DIRECTORY/ntfy_token")" \
+                  || true
               }
 
               unresolved() {
@@ -106,8 +131,14 @@
           description = "Send notification when a service fails";
           after = [ "ntfy-sh.service" ];
           requires = [ "ntfy-sh.service" ];
+
           serviceConfig = {
             Type = "exec";
+
+            LoadCredential = [
+              "ntfy_token:${config.sops.secrets."ntfy/token".path}"
+            ];
+
             ExecStart = "${failureNotifier}/bin/service-failure-notify %i";
           };
         };

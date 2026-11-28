@@ -11,21 +11,29 @@
       systemd.services.crash-notifier = {
         description = "Notify if previous boot ended in a crash";
         wantedBy = [ "multi-user.target" ];
-        after = [ "network-online.target" ];
-        wants = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "ntfy-sh.service"
+        ];
+
+        wants = [
+          "network-online.target"
+          "ntfy-sh.service"
+        ];
 
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
           StateDirectory = "crash-notifier";
+
+          LoadCredential = [
+            "ntfy_token:${config.sops.secrets."ntfy/token".path}"
+          ];
         };
 
         path = with pkgs; [ curl ];
 
         script =
-          let
-            inherit (config.me.services.ntfy) url;
-          in
           # bash
           ''
             MARKER="/var/lib/crash-notifier/clean_exit"
@@ -33,8 +41,10 @@
             if [ ! -f "$MARKER" ]; then
               for i in {1..10}; do
                 if curl --fail --connect-timeout 5 \
+                  --header @- \
                   -d "Server crashed, rebooted" \
-                  ${url}/status; then
+                  http://127.0.0.1:${toString config.me.services.ntfy.port}/status \
+                  <<< "Authorization: Bearer $(< "$CREDENTIALS_DIRECTORY/ntfy_token")"; then
                   break
                 fi
                 echo "Notification failed. Retrying in 5s..."

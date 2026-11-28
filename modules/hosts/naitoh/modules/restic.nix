@@ -117,11 +117,5 @@
           paths = [ "/data/main/backups/git" ];
           day = "Mon";
         });
-
-      systemd.services = lib.mkMerge (
-        map (service: self.lib.notifyOnServiceFailure ("restic-backups-" + service)) (
-          builtins.attrNames config.services.restic.backups
-        )
-      );
     };
 }

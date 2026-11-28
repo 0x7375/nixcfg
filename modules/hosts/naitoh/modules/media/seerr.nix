@@ -116,7 +116,8 @@
 
         notif.ntfy.seerr = {
           enable = true;
-          serverUrl = config.me.services.ntfy.url;
+          serverUrl = "http://127.0.0.1:${toString config.me.services.ntfy.port}";
+          accessToken._secret = config.sops.secrets."ntfy/token".path;
           topics = [ "media" ];
           embedPoster = true;
 

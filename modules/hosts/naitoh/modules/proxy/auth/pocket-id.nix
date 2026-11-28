@@ -57,8 +57,6 @@
             mode = "0700";
           }
         ];
-
-        systemd.services = self.lib.notifyOnServiceFailure "pocket-id";
       };
     };
 }
